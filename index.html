@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#030508" />
+    <meta
+      name="description"
+      content="Maze Escape - a 2D horror maze game. Find the exit before it finds you."
+    />
+    <title>Maze Escape — Don't Get Caught</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23030508'/%3E%3Cpath d='M8 8h48v48H8z' fill='none' stroke='%238feaff' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='10' fill='none' stroke='%23ff3b55' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='3' fill='%23ff3b55'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <main id="app">
+      <div id="stage">
+        <canvas id="game-canvas" aria-label="Maze escape gameplay"></canvas>
+
+        <div id="vignette" aria-hidden="true"></div>
+        <div id="grain" aria-hidden="true"></div>
+        <div id="danger-vignette" aria-hidden="true"></div>
+        <div id="flash" aria-hidden="true"></div>
+
+        <header id="hud" class="hidden">
+          <div class="hud-chapter">
+            <span class="hud-kicker" id="hud-difficulty">EASY</span>
+            <span class="hud-title" id="hud-chapter">THE ENTRANCE</span>
+          </div>
+          <div class="hud-timer-wrap">
+            <span class="hud-kicker">ELAPSED</span>
+            <span class="hud-timer" id="hud-timer">00:00</span>
+          </div>
+          <div class="hud-actions">
+            <div class="hud-threat threat-0" id="hud-threat">
+              <span class="threat-bars" aria-hidden="true">
+                <i></i><i></i><i></i><i></i><i></i>
+              </span>
+              <span class="threat-text">
+                <span class="hud-kicker">THREAT</span>
+                <span id="threat-label">DORMANT</span>
+              </span>
+            </div>
+            <button class="hud-btn" id="btn-mute" type="button">MUTE</button>
+            <button class="hud-btn" id="btn-pause" type="button">PAUSE</button>
+          </div>
+        </header>
+
+        <div id="countdown" class="hidden" aria-live="assertive">
+          <span id="countdown-value">3</span>
+          <span id="countdown-label">THE SHADOW IS WAKING</span>
+        </div>
+
+        <div id="toast" role="status" aria-live="polite"></div>
+
+        <div id="touch-controls" class="hidden" aria-label="Touch movement controls">
+          <div class="touch-pad">
+            <button class="touch-btn touch-n" data-direction="N" type="button" aria-label="Move up">▲</button>
+            <button class="touch-btn touch-w" data-direction="W" type="button" aria-label="Move left">◀</button>
+            <span class="touch-hub" aria-hidden="true">◆</span>
+            <button class="touch-btn touch-e" data-direction="E" type="button" aria-label="Move right">▶</button>
+            <button class="touch-btn touch-s" data-direction="S" type="button" aria-label="Move down">▼</button>
+          </div>
+          <span class="touch-label">MOVE</span>
+        </div>
+
+        <section id="screen-home" class="screen screen-home">
+          <div class="home-eye" aria-hidden="true"></div>
+          <div class="home-poster">
+            <p class="home-stamp">CHAPTER I &mdash; THE DESCENT</p>
+            <h1 class="game-title"><span>MAZE</span><span class="title-red">ESCAPE</span></h1>
+            <p class="tagline">The door is gone. It knows you&rsquo;re here.</p>
+            <div class="menu-actions">
+              <button class="btn btn-primary btn-begin" id="btn-start" type="button">
+                <span>START GAME</span>
+                <span class="btn-sub">BEGIN THE DESCENT</span>
+              </button>
+              <div class="menu-links">
+                <button class="btn btn-link" id="btn-howto" type="button">HOW TO PLAY</button>
+                <button class="btn btn-link" id="btn-settings" type="button">SETTINGS</button>
+              </div>
+            </div>
+            <p class="home-hint">WASD / ARROWS &middot; ON-SCREEN D-PAD ON MOBILE</p>
+          </div>
+        </section>
+
+        <section id="screen-howto" class="screen hidden">
+          <div class="panel panel-wide">
+            <p class="eyebrow">SURVIVAL BRIEFING</p>
+            <h2>How to Play</h2>
+            <p class="panel-lead">
+              The maze wants you lost. The thing inside it wants you found.
+            </p>
+
+            <div class="howto-grid">
+              <div class="howto-item">
+                <span class="howto-number">01</span>
+                <h3>Move</h3>
+                <p>
+                  Use <span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span>
+                  or the arrow keys. On touch screens, use the on-screen D-pad.
+                </p>
+              </div>
+              <div class="howto-item">
+                <span class="howto-number">02</span>
+                <h3>Find the exit</h3>
+                <p>The green doorway is your way out. Your explored path stays faintly visible.</p>
+              </div>
+              <div class="howto-item">
+                <span class="howto-number">03</span>
+                <h3>Keep moving</h3>
+                <p>The Shadow wakes after a delay, then gets faster. Dead ends are death.</p>
+              </div>
+              <div class="howto-item">
+                <span class="howto-number">04</span>
+                <h3>Listen</h3>
+                <p>Your heartbeat quickens when it is close. Sound is your first warning.</p>
+              </div>
+            </div>
+
+            <div class="control-strip">
+              <span><b>ESC</b> PAUSE</span>
+              <span><b>M</b> MUTE</span>
+              <span><b>R</b> RETRY AFTER DEATH</span>
+              <span class="touch-only"><b>◎</b> ON-SCREEN D-PAD</span>
+            </div>
+
+            <div class="panel-actions">
+              <button class="btn btn-primary" id="btn-howto-back" type="button">BACK</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="screen-settings" class="screen hidden">
+          <div class="panel">
+            <p class="eyebrow">TUNE THE DARK</p>
+            <h2>Settings</h2>
+
+            <div class="settings-list">
+              <label class="setting-row">
+                <span>
+                  <strong>Master volume</strong>
+                  <small>Footsteps, warnings, and whatever is breathing.</small>
+                </span>
+                <input id="setting-volume" type="range" min="0" max="100" step="1" value="65" />
+              </label>
+
+              <label class="setting-row">
+                <span>
+                  <strong>Mute all audio</strong>
+                  <small>You can also press M at any time.</small>
+                </span>
+                <input id="setting-mute" type="checkbox" />
+              </label>
+
+              <label class="setting-row">
+                <span>
+                  <strong>Screen shake</strong>
+                  <small>Impact feedback when the Shadow reaches you.</small>
+                </span>
+                <input id="setting-shake" type="checkbox" checked />
+              </label>
+
+              <label class="setting-row">
+                <span>
+                  <strong>Reduce flashing</strong>
+                  <small>Softens jumpscare flashes and persistent pulsing.</small>
+                </span>
+                <input id="setting-flash" type="checkbox" />
+              </label>
+            </div>
+
+            <div class="settings-danger">
+              <button class="btn btn-danger btn-small" id="btn-reset-progress" type="button">
+                RESET ALL PROGRESS
+              </button>
+            </div>
+
+            <div class="panel-actions">
+              <button class="btn btn-primary" id="btn-settings-back" type="button">BACK</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="screen-difficulty" class="screen hidden">
+          <div class="panel panel-wide">
+            <button class="back-link" id="btn-difficulty-back" type="button">&larr; HOME</button>
+            <p class="eyebrow">CHOOSE YOUR DESCENT</p>
+            <h2>Difficulty</h2>
+            <p class="panel-lead">The maze changes. So does what follows you.</p>
+
+            <div class="difficulty-grid">
+              <button class="difficulty-card" data-difficulty="0" data-glyph="I" type="button">
+                <span class="difficulty-top">
+                  <span class="difficulty-name">Easy</span>
+                  <span class="difficulty-tag">QUIET DESCENT</span>
+                </span>
+                <span class="difficulty-blurb">A slow stalker and a generous light. Learn the maze.</span>
+                <span class="difficulty-stats">
+                  <span>17–23 COLUMNS</span>
+                  <span>SHADOW 2.1–3.0</span>
+                  <span>LIGHT 5.2</span>
+                </span>
+                <span class="difficulty-progress" id="progress-easy">0 / 3 CLEARED</span>
+              </button>
+
+              <button class="difficulty-card" data-difficulty="1" data-glyph="II" type="button">
+                <span class="difficulty-top">
+                  <span class="difficulty-name">Medium</span>
+                  <span class="difficulty-tag">IT WAKES SOONER</span>
+                </span>
+                <span class="difficulty-blurb">A darker maze and a hunter that does not tire.</span>
+                <span class="difficulty-stats">
+                  <span>21–29 COLUMNS</span>
+                  <span>SHADOW 2.5–3.5</span>
+                  <span>LIGHT 4.6</span>
+                </span>
+                <span class="difficulty-progress" id="progress-medium">0 / 3 CLEARED</span>
+              </button>
+
+              <button class="difficulty-card difficulty-hard" data-difficulty="2" data-glyph="III" type="button">
+                <span class="difficulty-top">
+                  <span class="difficulty-name">Hard</span>
+                  <span class="difficulty-tag">NO MERCY</span>
+                </span>
+                <span class="difficulty-blurb">Little light. A relentless shadow. Outrun it or die.</span>
+                <span class="difficulty-stats">
+                  <span>25–33 COLUMNS</span>
+                  <span>SHADOW 2.9–3.9</span>
+                  <span>LIGHT 4.0</span>
+                </span>
+                <span class="difficulty-progress" id="progress-hard">0 / 3 CLEARED</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section id="screen-levels" class="screen hidden">
+          <div class="panel panel-wide">
+            <button class="back-link" id="btn-levels-back" type="button">&larr; DIFFICULTY</button>
+            <p class="eyebrow" id="levels-subtitle">EASY</p>
+            <h2 id="levels-title">Select Chapter</h2>
+            <p class="panel-lead">Clear a chapter to unlock the next. The maze remembers your best time.</p>
+            <div class="level-grid" id="level-grid"></div>
+          </div>
+        </section>
+
+        <section id="screen-intro" class="screen screen-intro hidden">
+          <div class="panel intro-panel">
+            <p class="eyebrow" id="intro-kicker">CHAPTER I</p>
+            <h2 id="intro-title">The Entrance</h2>
+            <p class="intro-story" id="intro-story"></p>
+            <div class="intro-meta" id="intro-meta"></div>
+            <div class="panel-actions">
+              <button class="btn btn-primary" id="btn-enter" type="button">ENTER THE MAZE</button>
+              <button class="btn btn-ghost" id="btn-intro-back" type="button">BACK</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="screen-pause" class="screen screen-modal hidden">
+          <div class="panel panel-small">
+            <p class="eyebrow">THE DARK WAITS</p>
+            <h2>Paused</h2>
+            <p class="panel-lead">It will still be there when you return.</p>
+            <div class="panel-actions panel-actions-stack">
+              <button class="btn btn-primary" id="btn-resume" type="button">RESUME</button>
+              <button class="btn" id="btn-restart" type="button">RESTART CHAPTER</button>
+              <button class="btn btn-ghost" id="btn-pause-quit" type="button">QUIT TO MENU</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="screen-gameover" class="screen screen-modal screen-death hidden">
+          <div class="panel panel-small result-panel">
+            <p class="eyebrow">IT FOUND YOU</p>
+            <h2 class="result-title result-death">CAUGHT</h2>
+            <p class="panel-lead" id="gameover-message">
+              The dark closes in. Your light goes out.
+            </p>
+            <div class="result-stats">
+              <div><span>SURVIVED</span><strong id="gameover-time">00:00.00</strong></div>
+              <div><span>BEST</span><strong id="gameover-best">--:--.--</strong></div>
+            </div>
+            <p class="record-line" id="gameover-record"></p>
+            <div class="panel-actions">
+              <button class="btn btn-primary" id="btn-retry" type="button">TRY AGAIN</button>
+              <button class="btn btn-ghost" id="btn-gameover-home" type="button">QUIT TO MENU</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="screen-victory" class="screen screen-modal screen-escape hidden">
+          <div class="panel panel-small result-panel">
+            <p class="eyebrow" id="victory-kicker">CHAPTER CLEARED</p>
+            <h2 class="result-title result-escape" id="victory-title">ESCAPED</h2>
+            <p class="panel-lead" id="victory-message">
+              The green light spills over you. Behind, something screams without a mouth.
+            </p>
+            <div class="result-stats">
+              <div><span>ESCAPE TIME</span><strong id="victory-time">00:00.00</strong></div>
+              <div><span>BEST</span><strong id="victory-best">--:--.--</strong></div>
+            </div>
+            <p class="record-line" id="victory-record"></p>
+            <div class="panel-actions">
+              <button class="btn btn-primary" id="btn-next" type="button">NEXT CHAPTER</button>
+              <button class="btn btn-ghost" id="btn-victory-replay" type="button">REPLAY</button>
+              <button class="btn btn-ghost" id="btn-victory-home" type="button">HOME</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>

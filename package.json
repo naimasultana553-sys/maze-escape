@@ -1,0 +1,11 @@
+{
+  "name": "maze-escape",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Maze Escape - a 2D horror maze game. Find the exit before it finds you.",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test tests/*.test.js"
+  }
+}
