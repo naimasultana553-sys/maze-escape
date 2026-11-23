@@ -1,8 +1,8 @@
 import {
-  CHAPTERS,
   CATCH_RADIUS,
   COUNTDOWN_SECONDS,
-  DIFFICULTIES
+  DIFFICULTIES,
+  LEVELS
 } from "./config.js";
 import { Maze } from "./maze.js";
 import { Player } from "./player.js";
@@ -97,6 +97,8 @@ export class Game {
     this.ui.showHome();
     this.ui.setHUDVisible(false);
     this.ui.setDanger(0);
+    this.ui.setLevelDanger(0, 0);
+    this.renderer.setDangerTone(0, 0);
     this.ui.hideCountdown();
   }
 
@@ -138,7 +140,8 @@ export class Game {
     this.audio.stopGameplay();
     this.ui.showIntro({
       difficulty: this.difficulty,
-      levelIndex: this.levelIndex
+      levelIndex: this.levelIndex,
+      difficultyIndex: this.difficultyIndex
     });
   }
 
@@ -150,6 +153,8 @@ export class Game {
     );
     this.maze = new Maze(cols, rows, seed);
     this.lightRadius = difficulty.lightRadius[this.levelIndex];
+    this.renderer.setDangerTone(this.levelIndex, this.difficultyIndex);
+    this.ui.setLevelDanger(this.levelIndex, this.difficultyIndex);
     this.renderer.setMaze(this.maze, true);
 
     this.player = new Player(this.maze, this.maze.start);
@@ -187,7 +192,7 @@ export class Game {
     this.ui.showGameplay();
     this.ui.setHUD({
       difficulty: this.difficulty.name.toUpperCase(),
-      chapter: CHAPTERS[this.levelIndex].title.toUpperCase(),
+      level: LEVELS[this.levelIndex].label.toUpperCase(),
       timer: "00:00"
     });
     this.ui.setThreat(0);
@@ -214,14 +219,15 @@ export class Game {
   }
 
   nextLevel() {
-    if (this.levelIndex >= CHAPTERS.length - 1) return;
+    if (this.levelIndex >= LEVELS.length - 1) return;
     this.levelIndex += 1;
     this.loadLevel();
     this.state = "intro";
     this.audio.stopGameplay();
     this.ui.showIntro({
       difficulty: this.difficulty,
-      levelIndex: this.levelIndex
+      levelIndex: this.levelIndex,
+      difficultyIndex: this.difficultyIndex
     });
   }
 
@@ -476,7 +482,7 @@ export class Game {
     if (this.escapedTimer > 0) return;
 
     this.state = "victory";
-    const isFinal = this.levelIndex >= CHAPTERS.length - 1;
+    const isFinal = this.levelIndex >= LEVELS.length - 1;
     this.ui.showVictory({
       time: this.lastResult.time,
       best: this.lastResult.best,
@@ -484,7 +490,7 @@ export class Game {
       isFinal,
       levelIndex: this.levelIndex,
       difficultyIndex: this.difficultyIndex,
-      nextChapter: CHAPTERS[this.levelIndex + 1]?.title
+      progress: this.storage.getProgress(this.difficulty.id)
     });
   }
 

@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#030508" />
     <meta
       name="description"
-      content="Maze Escape - a 2D horror maze game. Find the exit before it finds you."
+      content="Maze Escape - a 2D horror maze game. Follow the path, find the treasure, and get out before it finds you."
     />
     <title>Maze Escape — Don't Get Caught</title>
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -31,9 +31,9 @@
         <div id="flash" aria-hidden="true"></div>
 
         <header id="hud" class="hidden">
-          <div class="hud-chapter">
+          <div class="hud-level">
             <span class="hud-kicker" id="hud-difficulty">EASY</span>
-            <span class="hud-title" id="hud-chapter">THE ENTRANCE</span>
+            <span class="hud-title" id="hud-level">LEVEL 1</span>
           </div>
           <div class="hud-timer-wrap">
             <span class="hud-kicker">ELAPSED</span>
@@ -76,7 +76,7 @@
           <div class="home-eye" aria-hidden="true"></div>
           <div class="home-poster">
             <div class="home-copy">
-              <p class="home-stamp">CHAPTER I &mdash; THE DESCENT</p>
+              <p class="home-stamp">SIX LEVELS &mdash; ONE TREASURE</p>
               <h1 class="game-title"><span>MAZE</span><span class="title-red">ESCAPE</span></h1>
               <p class="tagline">The door is gone. It knows you&rsquo;re here.</p>
               <div class="menu-actions">
@@ -206,13 +206,13 @@
                   <span class="difficulty-name">Easy</span>
                   <span class="difficulty-tag">QUIET DESCENT</span>
                 </span>
-                <span class="difficulty-blurb">A slow stalker and a generous light. Learn the maze.</span>
+                <span class="difficulty-blurb">Larger mazes, a slow stalker, and generous light. Learn the path.</span>
                 <span class="difficulty-stats">
-                  <span>17–23 COLUMNS</span>
-                  <span>SHADOW 2.1–3.0</span>
-                  <span>LIGHT 5.2</span>
+                  <span>17&ndash;31 COLUMNS</span>
+                  <span>SHADOW 1.9&ndash;3.0</span>
+                  <span>LIGHT 5.6 &rarr; 4.6</span>
                 </span>
-                <span class="difficulty-progress" id="progress-easy">0 / 3 CLEARED</span>
+                <span class="difficulty-progress" id="progress-easy">0 / 6 CLEARED</span>
               </button>
 
               <button class="difficulty-card" data-difficulty="1" data-glyph="II" type="button">
@@ -220,13 +220,13 @@
                   <span class="difficulty-name">Medium</span>
                   <span class="difficulty-tag">IT WAKES SOONER</span>
                 </span>
-                <span class="difficulty-blurb">A darker maze and a hunter that does not tire.</span>
+                <span class="difficulty-blurb">The Shadow stirs early and moves quickly. The maze grows without mercy.</span>
                 <span class="difficulty-stats">
-                  <span>21–29 COLUMNS</span>
-                  <span>SHADOW 2.5–3.5</span>
-                  <span>LIGHT 4.6</span>
+                  <span>19&ndash;33 COLUMNS</span>
+                  <span>SHADOW 2.3&ndash;4.0</span>
+                  <span>LIGHT 4.8 &rarr; 3.8</span>
                 </span>
-                <span class="difficulty-progress" id="progress-medium">0 / 3 CLEARED</span>
+                <span class="difficulty-progress" id="progress-medium">0 / 6 CLEARED</span>
               </button>
 
               <button class="difficulty-card difficulty-hard" data-difficulty="2" data-glyph="III" type="button">
@@ -234,13 +234,13 @@
                   <span class="difficulty-name">Hard</span>
                   <span class="difficulty-tag">NO MERCY</span>
                 </span>
-                <span class="difficulty-blurb">Little light. A relentless shadow. Outrun it or die.</span>
+                <span class="difficulty-blurb">Light collapses fast. The Shadow wakes almost at once and never slows.</span>
                 <span class="difficulty-stats">
-                  <span>25–33 COLUMNS</span>
-                  <span>SHADOW 2.9–3.9</span>
-                  <span>LIGHT 4.0</span>
+                  <span>23&ndash;37 COLUMNS</span>
+                  <span>SHADOW 2.8&ndash;4.6</span>
+                  <span>LIGHT 4.2 &rarr; 2.2</span>
                 </span>
-                <span class="difficulty-progress" id="progress-hard">0 / 3 CLEARED</span>
+                <span class="difficulty-progress" id="progress-hard">0 / 6 CLEARED</span>
               </button>
             </div>
           </div>
@@ -250,16 +250,16 @@
           <div class="panel panel-wide">
             <button class="back-link" id="btn-levels-back" type="button">&larr; DIFFICULTY</button>
             <p class="eyebrow" id="levels-subtitle">EASY</p>
-            <h2 id="levels-title">Select Chapter</h2>
-            <p class="panel-lead">Clear a chapter to unlock the next. The maze remembers your best time.</p>
-            <div class="level-grid" id="level-grid"></div>
+            <h2 id="levels-title">The Path to the Treasure</h2>
+            <p class="panel-lead">Clear a level to unlock the next step. The treasure waits at the end of the path.</p>
+            <div class="path-map" id="level-path" aria-label="Level path to the treasure"></div>
           </div>
         </section>
 
         <section id="screen-intro" class="screen screen-intro hidden">
           <div class="panel intro-panel">
-            <p class="eyebrow" id="intro-kicker">CHAPTER I</p>
-            <h2 id="intro-title">The Entrance</h2>
+            <p class="eyebrow" id="intro-kicker">LEVEL 1</p>
+            <h2 id="intro-title">The Broken Gate</h2>
             <p class="intro-story" id="intro-story"></p>
             <div class="intro-meta" id="intro-meta"></div>
             <div class="panel-actions">
@@ -276,7 +276,7 @@
             <p class="panel-lead">It will still be there when you return.</p>
             <div class="panel-actions panel-actions-stack">
               <button class="btn btn-primary" id="btn-resume" type="button">RESUME</button>
-              <button class="btn" id="btn-restart" type="button">RESTART CHAPTER</button>
+              <button class="btn" id="btn-restart" type="button">RESTART LEVEL</button>
               <button class="btn btn-ghost" id="btn-pause-quit" type="button">QUIT TO MENU</button>
             </div>
           </div>
@@ -303,18 +303,19 @@
 
         <section id="screen-victory" class="screen screen-modal screen-escape hidden">
           <div class="panel panel-small result-panel">
-            <p class="eyebrow" id="victory-kicker">CHAPTER CLEARED</p>
+            <p class="eyebrow" id="victory-kicker">LEVEL CLEARED</p>
             <h2 class="result-title result-escape" id="victory-title">ESCAPED</h2>
             <p class="panel-lead" id="victory-message">
-              The green light spills over you. Behind, something screams without a mouth.
+              The dark releases you — for now. The next chamber waits deeper in.
             </p>
             <div class="result-stats">
               <div><span>ESCAPE TIME</span><strong id="victory-time">00:00.00</strong></div>
               <div><span>BEST</span><strong id="victory-best">--:--.--</strong></div>
             </div>
+            <div class="victory-path" id="victory-path" aria-label="Path progress to the treasure"></div>
             <p class="record-line" id="victory-record"></p>
             <div class="panel-actions">
-              <button class="btn btn-primary" id="btn-next" type="button">NEXT CHAPTER</button>
+              <button class="btn btn-primary" id="btn-next" type="button">NEXT LEVEL</button>
               <button class="btn btn-ghost" id="btn-victory-replay" type="button">REPLAY</button>
               <button class="btn btn-ghost" id="btn-victory-home" type="button">HOME</button>
             </div>

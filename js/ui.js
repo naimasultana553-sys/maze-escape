@@ -1,7 +1,25 @@
-import { CHAPTERS, DIFFICULTIES } from "./config.js";
+import { DIFFICULTIES, LEVELS } from "./config.js";
 import { formatBestTime } from "./utils.js";
 
 const THREAT_LABELS = ["DORMANT", "DISTANT", "STALKING", "CLOSE", "RIGHT BEHIND"];
+
+const PATH_POINTS = [
+  { x: 11, y: 76 },
+  { x: 30, y: 62 },
+  { x: 19, y: 38 },
+  { x: 41, y: 21 },
+  { x: 62, y: 32 },
+  { x: 52, y: 59 },
+  { x: 84, y: 72 }
+];
+
+function segmentPath(from, to) {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const cx = (from.x + to.x) / 2 - dy * 0.13;
+  const cy = (from.y + to.y) / 2 + dx * 0.13;
+  return `M ${from.x} ${from.y} Q ${cx.toFixed(2)} ${cy.toFixed(2)} ${to.x} ${to.y}`;
+}
 
 export class UI {
   constructor(actions) {
@@ -18,7 +36,7 @@ export class UI {
     this.stage = document.getElementById("stage");
     this.hud = document.getElementById("hud");
     this.hudDifficulty = document.getElementById("hud-difficulty");
-    this.hudChapter = document.getElementById("hud-chapter");
+    this.hudLevel = document.getElementById("hud-level");
     this.hudTimer = document.getElementById("hud-timer");
     this.hudThreat = document.getElementById("hud-threat");
     this.threatLabel = document.getElementById("threat-label");
@@ -29,7 +47,8 @@ export class UI {
     this.dangerVignette = document.getElementById("danger-vignette");
     this.flashElement = document.getElementById("flash");
     this.muteButton = document.getElementById("btn-mute");
-    this.levelGrid = document.getElementById("level-grid");
+    this.levelPath = document.getElementById("level-path");
+    this.victoryPath = document.getElementById("victory-path");
     this.touchControls = document.getElementById("touch-controls");
 
     this.bind();
@@ -62,7 +81,7 @@ export class UI {
     on("btn-mute", () => this.actions.toggleMute());
     on("btn-reset-progress", () => {
       const confirmed = window.confirm(
-        "Reset all chapter progress and best times? Settings will be kept."
+        "Reset all level progress and best times? Settings will be kept."
       );
       if (confirmed) this.actions.resetProgress();
     });
@@ -148,61 +167,121 @@ export class UI {
     document.body.classList.toggle("reduced-flash", Boolean(settings.reducedFlash));
   }
 
+  setLevelDanger(levelIndex, difficultyIndex) {
+    const levelFactor = LEVELS.length > 1 ? levelIndex / (LEVELS.length - 1) : 0;
+    const difficultyFactor = DIFFICULTIES.length > 1 ? difficultyIndex / (DIFFICULTIES.length - 1) : 0;
+    const danger = Math.max(0, Math.min(1, levelFactor * 0.8 + difficultyFactor * 0.2));
+    this.stage.style.setProperty("--level-danger", danger.toFixed(3));
+    this.stage.style.setProperty("--grain-opacity", (0.06 + danger * 0.09).toFixed(3));
+    this.stage.style.setProperty("--vignette-shadow", `${(9 + danger * 5).toFixed(1)}em`);
+  }
+
   showDifficulty(progress) {
     for (const difficulty of DIFFICULTIES) {
       const data = progress[difficulty.id];
       const cleared = data.best.filter((time) => Number.isFinite(time)).length;
       const element = document.getElementById(`progress-${difficulty.id}`);
-      element.textContent = `${cleared} / 3 CLEARED`;
-      element.style.setProperty("--fill", String(cleared / 3));
+      element.textContent = `${cleared} / ${LEVELS.length} CLEARED`;
+      element.style.setProperty("--fill", String(cleared / LEVELS.length));
     }
     this.showScreen("difficulty");
   }
 
   showLevels(difficultyIndex, progress) {
     const difficulty = DIFFICULTIES[difficultyIndex];
-    document.getElementById("levels-subtitle").textContent = difficulty.name;
-    document.getElementById("levels-title").textContent = "Select Chapter";
-    this.levelGrid.innerHTML = CHAPTERS.map((chapter, index) => {
+    const clearedCount = progress.best.filter((time) => Number.isFinite(time)).length;
+    const currentIndex = Math.min(Math.max(progress.unlocked - 1, 0), LEVELS.length - 1);
+    const treasureReached = clearedCount >= LEVELS.length;
+
+    document.getElementById("levels-subtitle").textContent = difficulty.name.toUpperCase();
+    document.getElementById("levels-title").textContent = "The Path to the Treasure";
+
+    const segments = PATH_POINTS.slice(0, -1)
+      .map((point, index) => {
+        let state = "locked";
+        if (treasureReached || (index < clearedCount && index + 1 < clearedCount)) {
+          state = "completed";
+        } else if (!treasureReached && index + 1 === currentIndex) {
+          state = "current";
+        }
+        return `<path class="path-segment ${state}" d="${segmentPath(point, PATH_POINTS[index + 1])}" />`;
+      })
+      .join("");
+
+    const nodes = LEVELS.map((level, index) => {
+      const point = PATH_POINTS[index];
       const unlocked = index < progress.unlocked;
       const best = progress.best[index];
-      const [cols, rows] = difficulty.sizes[index];
+      let state = "locked";
+      if (index < clearedCount) state = "completed";
+      else if (!treasureReached && index === currentIndex) state = "current";
+      else if (unlocked) state = "open";
+
+      const stateText =
+        state === "completed"
+          ? "CLEARED"
+          : state === "current"
+            ? "ENTER"
+            : state === "open"
+              ? "OPEN"
+              : "LOCKED";
       const bestText = Number.isFinite(best)
         ? `BEST ${formatBestTime(best)}`
         : unlocked
-          ? "NOT YET CLEARED"
-          : `CLEAR CHAPTER ${index} TO UNLOCK`;
+          ? state === "current"
+            ? "ENTER TO CONTINUE"
+            : "NOT YET CLEARED"
+          : `CLEAR LEVEL ${index} TO UNLOCK`;
+
       return `
-        <button class="level-card${unlocked ? "" : " locked"}" data-level="${index}" data-numeral="${
-          chapter.numeral
-        }" type="button" ${unlocked ? "" : "disabled"}>
-          <span class="level-cta">${unlocked ? "ENTER ›" : ""}</span>
-          <span class="level-index">CHAPTER ${chapter.numeral}</span>
-          <span class="level-name">${chapter.title}</span>
-          <span class="level-size">${cols} × ${rows} · WAKES IN ${difficulty.wakeDelay[index]}s</span>
-          <span class="level-best${Number.isFinite(best) ? " cleared" : ""}">${bestText}</span>
+        <button class="path-node ${state}" data-level="${index}" type="button"
+          style="--x: ${point.x}%; --y: ${point.y}%;"
+          aria-label="${level.label}: ${level.title}${unlocked ? "" : " (locked)"}"
+          ${unlocked ? "" : "disabled"}>
+          <span class="path-node__medallion">
+            <span class="path-node__number">${index + 1}</span>
+          </span>
+          <span class="path-node__label">${level.label}</span>
+          <span class="path-node__title">${level.title}</span>
+          <span class="path-node__state">${stateText}</span>
+          <span class="path-node__best${Number.isFinite(best) ? " cleared" : ""}">${bestText}</span>
         </button>
       `;
     }).join("");
 
-    this.levelGrid.querySelectorAll("[data-level]").forEach((card) => {
-      card.addEventListener("click", () => {
-        if (card.disabled) return;
-        this.actions.selectLevel(difficultyIndex, Number(card.dataset.level));
+    const treasurePoint = PATH_POINTS[LEVELS.length];
+    this.levelPath.innerHTML = `
+      <svg class="path-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        ${segments}
+      </svg>
+      ${nodes}
+      <div class="treasure-marker ${treasureReached ? "reached" : "sealed"}"
+        style="--x: ${treasurePoint.x}%; --y: ${treasurePoint.y}%;">
+        <span class="treasure-icon" aria-hidden="true">&#10022;</span>
+        <span class="treasure-label">TREASURE</span>
+        <span class="treasure-state">${treasureReached ? "REACHED" : "SEALED"}</span>
+      </div>
+    `;
+
+    this.levelPath.querySelectorAll("[data-level]").forEach((node) => {
+      node.addEventListener("click", () => {
+        if (node.disabled) return;
+        this.actions.selectLevel(difficultyIndex, Number(node.dataset.level));
       });
     });
 
     this.showScreen("levels");
   }
 
-  showIntro({ difficulty, levelIndex }) {
-    const chapter = CHAPTERS[levelIndex];
+  showIntro({ difficulty, levelIndex, difficultyIndex = 0 }) {
+    const level = LEVELS[levelIndex];
     const [cols, rows] = difficulty.sizes[levelIndex];
-    document.getElementById("intro-kicker").textContent = `CHAPTER ${chapter.numeral} · ${difficulty.name.toUpperCase()}`;
-    document.getElementById("intro-title").textContent = chapter.title;
-    document.getElementById("intro-story").textContent = chapter.story;
+    document.getElementById("intro-kicker").textContent = `${level.label} · ${difficulty.name.toUpperCase()}`;
+    document.getElementById("intro-title").textContent = level.title;
+    document.getElementById("intro-story").textContent = level.story;
     document.getElementById("intro-meta").textContent =
       `${cols} × ${rows} MAZE  ·  THE SHADOW WAKES IN ${difficulty.wakeDelay[levelIndex]} SECONDS`;
+    this.setLevelDanger(levelIndex, difficultyIndex);
     this.showScreen("intro");
     this.hideCountdown();
   }
@@ -229,27 +308,33 @@ export class UI {
     this.hideCountdown();
   }
 
-  showVictory({ time, best, isBest, isFinal, levelIndex, difficultyIndex, nextChapter }) {
-    const chapter = CHAPTERS[levelIndex];
+  showVictory({ time, best, isBest, isFinal, levelIndex, difficultyIndex, progress }) {
+    const level = LEVELS[levelIndex];
+    const nextLevel = LEVELS[levelIndex + 1];
+    const progressBest = progress?.best || [];
+    const clearedCount = Math.min(
+      LEVELS.length,
+      Math.max(progressBest.filter((timeValue) => Number.isFinite(timeValue)).length, levelIndex + 1)
+    );
     const kicker = document.getElementById("victory-kicker");
     const title = document.getElementById("victory-title");
     const message = document.getElementById("victory-message");
     const nextButton = document.getElementById("btn-next");
 
     if (isFinal) {
-      kicker.textContent = "ALL CHAPTERS CLEARED";
-      title.textContent = "YOU ESCAPED";
+      kicker.textContent = "ALL LEVELS CLEARED";
+      title.textContent = "TREASURE REACHED";
       message.textContent =
-        "The entrance opens behind you. Whatever was down there stays there. You do not look back.";
+        "The last lock turns. Gold, dust, and the silence you were promised — the treasure is yours.";
       nextButton.classList.add("hidden");
     } else {
-      kicker.textContent = `CHAPTER ${chapter.numeral} CLEARED`;
+      kicker.textContent = `${level.label} CLEARED`;
       title.textContent = "ESCAPED";
       message.textContent = `The dark releases you — for now. ${
-        CHAPTERS[levelIndex + 1]?.title || "The next chamber"
+        nextLevel?.title || "The next chamber"
       } waits deeper in.`;
       nextButton.classList.remove("hidden");
-      nextButton.textContent = `NEXT: ${(nextChapter || "").toUpperCase()}`;
+      nextButton.textContent = `NEXT: ${nextLevel?.label || "LEVEL"}`;
     }
 
     document.getElementById("victory-time").textContent = formatBestTime(time * 1000);
@@ -258,19 +343,41 @@ export class UI {
       : "--:--.--";
     document.getElementById("victory-record").textContent = isBest ? "NEW BEST TIME" : "";
     document.getElementById("btn-victory-replay").textContent = isFinal
-      ? "REPLAY FINAL CHAPTER"
-      : "REPLAY CHAPTER";
+      ? "REPLAY FINAL LEVEL"
+      : "REPLAY LEVEL";
 
     const difficulty = DIFFICULTIES[difficultyIndex];
     document.getElementById("victory-message").dataset.difficulty = difficulty.id;
+    this.renderVictoryPath(clearedCount, isFinal);
     this.setDanger(0);
     this.showScreen("victory");
     this.hideCountdown();
   }
 
-  setHUD({ difficulty, chapter, timer }) {
+  renderVictoryPath(clearedCount, isFinal) {
+    const total = LEVELS.length;
+    const cleared = Math.min(total, Math.max(0, clearedCount));
+    const reached = isFinal || cleared >= total;
+    const progressPercent = `${(cleared / total) * 100}%`;
+
+    this.victoryPath.innerHTML = `
+      <div class="victory-path__head">
+        <span>PATH TO THE TREASURE</span>
+        <span>${cleared} / ${total}</span>
+      </div>
+      <div class="victory-track" style="--path-progress: ${progressPercent};">
+        ${LEVELS.map((level, index) => {
+          const state = index < cleared ? "completed" : !reached && index === cleared ? "current" : "locked";
+          return `<span class="victory-step ${state}" title="${level.label}"><em>${index + 1}</em></span>`;
+        }).join("")}
+        <span class="victory-treasure ${reached ? "reached" : "sealed"}" title="Treasure">&#10022;</span>
+      </div>
+    `;
+  }
+
+  setHUD({ difficulty, level, timer }) {
     if (difficulty !== undefined) this.hudDifficulty.textContent = difficulty;
-    if (chapter !== undefined) this.hudChapter.textContent = chapter;
+    if (level !== undefined) this.hudLevel.textContent = level;
     if (timer !== undefined) this.hudTimer.textContent = timer;
   }
 

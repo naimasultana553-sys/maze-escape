@@ -1,5 +1,5 @@
 import { Maze } from "./maze.js";
-import { VIEW, UI_COLORS } from "./config.js";
+import { DIFFICULTIES, LEVELS, UI_COLORS, VIEW } from "./config.js";
 import { clamp, mulberry32 } from "./utils.js";
 
 const GAME_STATES_WITH_SCENE = new Set([
@@ -33,6 +33,7 @@ export class Renderer {
     this.shake = { timer: 0, duration: 0, intensity: 0 };
     this.screenShakeEnabled = true;
     this.lastTrailTime = 0;
+    this.dangerTone = 0;
 
     this.backdropMaze = new Maze(19, 13, 0x5eed1234);
     this.backdropLayout = null;
@@ -68,6 +69,13 @@ export class Renderer {
     }
 
     this.createDust();
+  }
+
+  setDangerTone(levelIndex, difficultyIndex) {
+    const levelFactor = LEVELS.length > 1 ? levelIndex / (LEVELS.length - 1) : 0;
+    const difficultyFactor = DIFFICULTIES.length > 1 ? difficultyIndex / (DIFFICULTIES.length - 1) : 0;
+    this.dangerTone = Math.max(0, Math.min(1, levelFactor * 0.8 + difficultyFactor * 0.2));
+    if (this.maze) this.drawBaseLayer();
   }
 
   setMaze(maze, resetExploration = true) {
@@ -125,6 +133,7 @@ export class Renderer {
     ctx.fillStyle = UI_COLORS.background;
     ctx.fillRect(0, 0, this.W, this.H);
 
+    const danger = this.dangerTone;
     const ambient = ctx.createRadialGradient(
       this.W * 0.5,
       this.H * 0.55,
@@ -133,28 +142,41 @@ export class Renderer {
       this.H * 0.55,
       this.W * 0.62
     );
-    ambient.addColorStop(0, "rgba(82, 54, 26, 0.24)");
+    ambient.addColorStop(
+      0,
+      `rgba(${Math.round(82 + danger * 42)}, ${Math.round(54 - danger * 24)}, ${Math.round(
+        26 - danger * 10
+      )}, ${(0.24 + danger * 0.08).toFixed(3)})`
+    );
     ambient.addColorStop(1, "rgba(3, 2, 1, 0)");
     ctx.fillStyle = ambient;
     ctx.fillRect(0, 0, this.W, this.H);
 
-    ctx.fillStyle = "rgba(20, 14, 9, 0.98)";
+    ctx.fillStyle = `rgba(${Math.round(20 - danger * 8)}, ${Math.round(
+      14 - danger * 8
+    )}, ${Math.round(9 - danger * 5)}, 0.98)`;
     ctx.fillRect(originX, originY, width, height);
 
     for (let y = 0; y < this.maze.rows; y += 1) {
       for (let x = 0; x < this.maze.cols; x += 1) {
         if ((x + y) % 2 === 0) continue;
-        ctx.fillStyle = "rgba(58, 40, 23, 0.3)";
+        ctx.fillStyle = `rgba(${Math.round(58 - danger * 14)}, ${Math.round(
+          40 - danger * 22
+        )}, ${Math.round(23 - danger * 12)}, ${(0.3 + danger * 0.12).toFixed(3)})`;
         ctx.fillRect(originX + x * cell, originY + y * cell, cell, cell);
       }
     }
 
     const textureRandom = mulberry32(this.maze.seed ^ 0x9e3779b9);
-    for (let i = 0; i < 340; i += 1) {
+    const textureCount = 340 + Math.round(danger * 260);
+    for (let i = 0; i < textureCount; i += 1) {
       const px = originX + textureRandom() * width;
       const py = originY + textureRandom() * height;
       const size = textureRandom() * 1.2 + 0.3;
-      ctx.fillStyle = `rgba(200, 164, 110, ${0.025 + textureRandom() * 0.04})`;
+      const grain = 0.025 + textureRandom() * 0.04 + danger * 0.025;
+      ctx.fillStyle = `rgba(${Math.round(200 + danger * 32)}, ${Math.round(
+        164 - danger * 50
+      )}, ${Math.round(110 - danger * 44)}, ${grain.toFixed(3)})`;
       ctx.fillRect(px, py, size, size);
     }
 
@@ -162,20 +184,26 @@ export class Renderer {
     ctx.lineJoin = "round";
 
     ctx.save();
-    ctx.shadowColor = UI_COLORS.wallGlow;
-    ctx.shadowBlur = Math.max(4, cell * 0.26);
-    ctx.strokeStyle = "rgba(158, 112, 58, 0.52)";
+    ctx.shadowColor = `rgba(${Math.round(194 + danger * 24)}, ${Math.round(
+      150 - danger * 62
+    )}, ${Math.round(82 - danger * 38)}, ${(0.34 + danger * 0.2).toFixed(3)})`;
+    ctx.shadowBlur = Math.max(4, cell * (0.26 + danger * 0.12));
+    ctx.strokeStyle = `rgba(${Math.round(158 - danger * 24)}, ${Math.round(
+      112 - danger * 48
+    )}, ${Math.round(58 - danger * 26)}, ${(0.52 + danger * 0.16).toFixed(3)})`;
     ctx.lineWidth = Math.max(1.2, cell * 0.065);
     this.traceWalls(ctx);
     ctx.stroke();
     ctx.restore();
 
-    ctx.strokeStyle = UI_COLORS.wall;
+    ctx.strokeStyle = `rgba(${Math.round(168 + danger * 18)}, ${Math.round(
+      128 - danger * 48
+    )}, ${Math.round(74 - danger * 34)}, ${Math.min(1, 0.9 + danger * 0.1).toFixed(3)})`;
     ctx.lineWidth = Math.max(1.2, cell * 0.06);
     this.traceWalls(ctx);
     ctx.stroke();
 
-    const inset = Math.max(10, cell * 0.45);
+    const inset = Math.max(10, cell * (0.45 + danger * 0.15));
     const edge = ctx.createRadialGradient(
       originX + width / 2,
       originY + height / 2,
@@ -185,7 +213,7 @@ export class Renderer {
       Math.max(width, height) * 0.7
     );
     edge.addColorStop(0, "rgba(0, 0, 0, 0)");
-    edge.addColorStop(1, "rgba(0, 0, 0, 0.55)");
+    edge.addColorStop(1, `rgba(0, 0, 0, ${(0.55 + danger * 0.22).toFixed(3)})`);
     ctx.fillStyle = edge;
     ctx.fillRect(originX - inset, originY - inset, width + inset * 2, height + inset * 2);
   }
@@ -383,15 +411,21 @@ export class Renderer {
     ctx.fillStyle = "#080603";
     ctx.fillRect(0, 0, this.W, this.H);
 
+    const backdropDanger = this.dangerTone;
     const redGlow = ctx.createRadialGradient(
-      this.W * (0.78 + Math.sin(this.time * 0.11) * 0.04),
+      this.W * (0.78 + Math.sin(this.time * (0.11 + backdropDanger * 0.07)) * 0.04),
       this.H * 0.7,
       0,
       this.W * 0.78,
       this.H * 0.7,
       this.W * 0.38
     );
-    redGlow.addColorStop(0, "rgba(110, 48, 18, 0.18)");
+    redGlow.addColorStop(
+      0,
+      `rgba(${Math.round(110 + backdropDanger * 50)}, ${Math.round(
+        48 - backdropDanger * 20
+      )}, ${Math.round(18 - backdropDanger * 8)}, ${(0.18 + backdropDanger * 0.2).toFixed(3)})`
+    );
     redGlow.addColorStop(1, "rgba(34, 14, 4, 0)");
     ctx.fillStyle = redGlow;
     ctx.fillRect(0, 0, this.W, this.H);
@@ -503,10 +537,17 @@ export class Renderer {
 
   drawDust() {
     const ctx = this.ctx;
+    const danger = this.dangerTone;
+    const count = this.dust.length + Math.round(danger * 36);
     ctx.save();
-    for (const mote of this.dust) {
+    for (let i = 0; i < count; i += 1) {
+      const mote = this.dust[i % this.dust.length];
+      if (!mote) continue;
       const blink = 0.5 + 0.5 * Math.sin(this.time * 0.8 + mote.drift);
-      ctx.fillStyle = `rgba(220, 190, 145, ${mote.alpha * blink * 0.7})`;
+      const alpha = mote.alpha * blink * (0.7 + danger * 0.5);
+      ctx.fillStyle = `rgba(${Math.round(220 + danger * 20)}, ${Math.round(
+        190 - danger * 60
+      )}, ${Math.round(145 - danger * 70)}, ${alpha.toFixed(3)})`;
       ctx.beginPath();
       ctx.arc(mote.x, mote.y, mote.size, 0, Math.PI * 2);
       ctx.fill();
@@ -751,7 +792,8 @@ export class Renderer {
     ctx.clearRect(0, 0, this.fogLayer.width, this.fogLayer.height);
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
 
-    ctx.fillStyle = "rgba(4, 3, 2, 0.965)";
+    const danger = this.dangerTone;
+    ctx.fillStyle = `rgba(4, 3, 2, ${(0.965 + danger * 0.018).toFixed(3)})`;
     ctx.fillRect(0, 0, this.W, this.H);
 
     const point = this.tilePixel(game.player.pos.x, game.player.pos.y);
@@ -768,8 +810,8 @@ export class Renderer {
       radius
     );
     light.addColorStop(0, "rgba(0, 0, 0, 1)");
-    light.addColorStop(0.62, "rgba(0, 0, 0, 0.96)");
-    light.addColorStop(0.84, "rgba(0, 0, 0, 0.58)");
+    light.addColorStop((0.62 - danger * 0.06).toFixed(3), "rgba(0, 0, 0, 0.96)");
+    light.addColorStop((0.84 - danger * 0.08).toFixed(3), "rgba(0, 0, 0, 0.58)");
     light.addColorStop(1, "rgba(0, 0, 0, 0)");
     ctx.fillStyle = light;
     ctx.beginPath();
@@ -783,12 +825,18 @@ export class Renderer {
   drawLightWash(game) {
     if (!game.player) return;
     const ctx = this.ctx;
+    const danger = this.dangerTone;
     const point = this.tilePixel(game.player.pos.x, game.player.pos.y);
-    const radius = game.lightRadius * this.layout.cell * 1.1;
+    const radius = game.lightRadius * this.layout.cell * (1.1 - danger * 0.08);
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
     const wash = ctx.createRadialGradient(point.x, point.y, 0, point.x, point.y, radius);
-    wash.addColorStop(0, "rgba(198, 149, 80, 0.1)");
+    wash.addColorStop(
+      0,
+      `rgba(${Math.round(198 + danger * 30)}, ${Math.round(
+        149 - danger * 55
+      )}, ${Math.round(80 - danger * 35)}, ${(0.1 - danger * 0.03).toFixed(3)})`
+    );
     wash.addColorStop(1, "rgba(48, 30, 12, 0)");
     ctx.fillStyle = wash;
     ctx.beginPath();
@@ -833,6 +881,15 @@ export class Renderer {
   }
 
   drawStateTint(game) {
+    if (this.dangerTone > 0) {
+      const pulse = 0.5 + 0.5 * Math.sin(this.time * 0.7);
+      this.ctx.fillStyle = `rgba(102, 28, 14, ${(
+        (0.012 + pulse * 0.012) *
+        this.dangerTone
+      ).toFixed(3)})`;
+      this.ctx.fillRect(0, 0, this.W, this.H);
+    }
+
     if (game.state === "dying") {
       const strength = clamp(game.deathTimer / 0.9, 0, 1);
       this.ctx.fillStyle = `rgba(122, 38, 18, ${0.08 + strength * 0.18})`;

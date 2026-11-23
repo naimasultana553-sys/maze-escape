@@ -9,24 +9,42 @@ export const CATCH_RADIUS = 0.68;
 export const SHADOW_RAMP_SECONDS = 105;
 export const COUNTDOWN_SECONDS = 3.2;
 
-export const CHAPTERS = [
+export const LEVELS = [
   {
-    numeral: "I",
-    title: "The Entrance",
+    label: "LEVEL 1",
+    title: "The Broken Gate",
     story:
-      "You came looking for the treasure. The entrance sealed behind you. Somewhere in the dark, something old has opened its eyes."
+      "You came for the treasure. The gate folded shut behind you, and something in the dark drew breath."
   },
   {
-    numeral: "II",
-    title: "The Depths",
+    label: "LEVEL 2",
+    title: "The Weeping Halls",
     story:
-      "The walls are colder here. Your light no longer reaches the ceiling. Whatever is following you has stopped pretending to be far away."
+      "Water taps inside walls that have no pipes. Each step sounds twice — once beneath you, once behind you."
   },
   {
-    numeral: "III",
-    title: "The Heart",
+    label: "LEVEL 3",
+    title: "The Ash Gallery",
     story:
-      "The treasure was never the point. The exit is close now. So is the thing behind you. Do not look back for long."
+      "Portraits hang in the soot, their faces scratched away. The light in your hand is smaller than it was."
+  },
+  {
+    label: "LEVEL 4",
+    title: "The Drowned Vault",
+    story:
+      "The floor breathes. Gold glimmers somewhere below, and the Shadow no longer bothers to stay quiet."
+  },
+  {
+    label: "LEVEL 5",
+    title: "The Bone Corridor",
+    story:
+      "Every turn narrows. Every honest path ends in a rib of stone. The treasure is close enough to smell."
+  },
+  {
+    label: "LEVEL 6",
+    title: "The Gilded Tomb",
+    story:
+      "The last chamber waits beyond the red dark. One more corridor, and the prize is yours — if it lets you take it."
   }
 ];
 
@@ -35,48 +53,57 @@ export const DIFFICULTIES = [
     id: "easy",
     name: "Easy",
     tagline: "A quiet descent",
-    blurb: "A slow stalker and a generous light. Learn the maze.",
+    blurb: "Larger mazes, a slow stalker, and generous light. Learn the path.",
     sizes: [
       [17, 13],
+      [19, 15],
       [21, 15],
-      [23, 17]
+      [23, 17],
+      [27, 19],
+      [31, 21]
     ],
-    shadowSpeed: [2.05, 2.25, 2.4],
-    shadowMax: [2.7, 2.85, 3.0],
-    wakeDelay: [8, 7.5, 7],
-    lightRadius: [5.2, 5.0, 4.8],
+    shadowSpeed: [1.85, 1.95, 2.05, 2.15, 2.25, 2.35],
+    shadowMax: [2.45, 2.55, 2.65, 2.75, 2.85, 2.95],
+    wakeDelay: [9, 8.5, 8, 7.5, 7, 6.5],
+    lightRadius: [5.6, 5.4, 5.2, 5.0, 4.8, 4.6],
     seedBase: 1103
   },
   {
     id: "medium",
     name: "Medium",
     tagline: "It wakes sooner",
-    blurb: "A darker maze and a hunter that does not tire.",
+    blurb: "The Shadow stirs early and moves quickly. The maze grows without mercy.",
     sizes: [
+      [19, 13],
       [21, 15],
-      [25, 17],
-      [29, 19]
+      [23, 17],
+      [27, 19],
+      [29, 19],
+      [33, 21]
     ],
-    shadowSpeed: [2.45, 2.6, 2.75],
-    shadowMax: [3.2, 3.35, 3.5],
-    wakeDelay: [5, 4.5, 4],
-    lightRadius: [4.6, 4.4, 4.2],
+    shadowSpeed: [2.25, 2.45, 2.65, 2.85, 3.05, 3.25],
+    shadowMax: [3.0, 3.2, 3.4, 3.6, 3.8, 4.0],
+    wakeDelay: [6.5, 5.5, 4.5, 3.8, 3.2, 2.6],
+    lightRadius: [4.8, 4.6, 4.4, 4.2, 4.0, 3.8],
     seedBase: 2741
   },
   {
     id: "hard",
     name: "Hard",
     tagline: "No mercy",
-    blurb: "Little light. A relentless shadow. Outrun it or die.",
+    blurb: "Light collapses fast. The Shadow wakes almost at once and never slows.",
     sizes: [
+      [23, 15],
       [25, 17],
-      [29, 19],
-      [33, 21]
+      [27, 19],
+      [31, 21],
+      [35, 23],
+      [37, 23]
     ],
-    shadowSpeed: [2.85, 3.0, 3.15],
-    shadowMax: [3.65, 3.75, 3.85],
-    wakeDelay: [2.5, 2.2, 2.0],
-    lightRadius: [4.0, 3.8, 3.6],
+    shadowSpeed: [2.75, 2.95, 3.15, 3.35, 3.55, 3.75],
+    shadowMax: [3.55, 3.75, 3.95, 4.15, 4.35, 4.55],
+    wakeDelay: [3.2, 2.6, 2.2, 1.8, 1.5, 1.2],
+    lightRadius: [4.2, 3.8, 3.4, 3.0, 2.6, 2.2],
     seedBase: 6121
   }
 ];
