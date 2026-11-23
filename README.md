@@ -6,6 +6,10 @@ A 2D horror maze game built with HTML5 Canvas and vanilla JavaScript. Explore a 
 labyrinth, remember the paths you have walked, and reach the green doorway before the
 Shadow catches you.
 
+## Play live
+
+[mazeescape-yn6k.vercel.app](https://mazeescape-yn6k.vercel.app)
+
 ## Run the game
 
 Requires Node.js 18 or newer.
