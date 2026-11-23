@@ -96,6 +96,7 @@ export class Game {
     this.audio.setPaused(false);
     this.ui.showHome();
     this.ui.setHUDVisible(false);
+    this.renderer.resize();
     this.ui.setDanger(0);
     this.ui.setLevelDanger(0, 0);
     this.renderer.setDangerTone(0, 0);
@@ -190,6 +191,7 @@ export class Game {
     this.lastExploredCell = "";
 
     this.ui.showGameplay();
+    this.renderer.resize();
     this.ui.setHUD({
       difficulty: this.difficulty.name.toUpperCase(),
       level: LEVELS[this.levelIndex].label.toUpperCase(),

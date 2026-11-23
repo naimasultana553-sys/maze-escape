@@ -223,11 +223,11 @@ export class Maze {
     return !this.hasWall(a.x, a.y, direction);
   }
 
-  layoutFor(width, height, margin) {
+  layoutFor(width, height, margin, minCell = 8) {
     const availableWidth = width - margin.left - margin.right;
     const availableHeight = height - margin.top - margin.bottom;
     const cell = Math.max(
-      8,
+      minCell,
       Math.min(availableWidth / this.cols, availableHeight / this.rows)
     );
     const mazeWidth = cell * this.cols;

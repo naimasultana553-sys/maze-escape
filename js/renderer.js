@@ -34,6 +34,8 @@ export class Renderer {
     this.screenShakeEnabled = true;
     this.lastTrailTime = 0;
     this.dangerTone = 0;
+    this.controlInset = 0;
+    this.minCell = 8;
 
     this.backdropMaze = new Maze(19, 13, 0x5eed1234);
     this.backdropLayout = null;
@@ -56,6 +58,20 @@ export class Renderer {
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     this.ctx.imageSmoothingEnabled = true;
 
+    const controls = document.getElementById("touch-controls");
+    const controlsVisible = Boolean(
+      controls &&
+        !controls.classList.contains("hidden") &&
+        window.getComputedStyle(controls).display !== "none"
+    );
+    const controlHeight = controlsVisible ? controls.getBoundingClientRect().height : 0;
+    // Portrait only needs a small nudge; landscape needs the full strip cleared.
+    const landscape = cssWidth > cssHeight;
+    const factor = landscape ? 1 : 0.6;
+    const cap = landscape ? 0.5 : 0.24;
+    this.controlInset = Math.min((controlHeight * factor) / scale, this.H * cap);
+    this.minCell = landscape && controlsVisible ? 6 : 8;
+
     this.backdropLayout = this.backdropMaze.layoutFor(this.W, this.H, {
       left: Math.max(24, this.W * 0.06),
       right: Math.max(24, this.W * 0.06),
@@ -64,11 +80,18 @@ export class Renderer {
     });
 
     if (this.maze) {
-      this.layout = this.maze.layoutFor(this.W, this.H, VIEW.MARGIN);
+      this.layout = this.maze.layoutFor(this.W, this.H, this.playfieldMargin(), this.minCell);
       this.buildLayers();
     }
 
     this.createDust();
+  }
+
+  playfieldMargin() {
+    return {
+      ...VIEW.MARGIN,
+      bottom: VIEW.MARGIN.bottom + this.controlInset
+    };
   }
 
   setDangerTone(levelIndex, difficultyIndex) {
@@ -80,7 +103,7 @@ export class Renderer {
 
   setMaze(maze, resetExploration = true) {
     this.maze = maze;
-    this.layout = maze.layoutFor(this.W, this.H, VIEW.MARGIN);
+    this.layout = maze.layoutFor(this.W, this.H, this.playfieldMargin(), this.minCell);
     if (resetExploration) {
       maze.explored.fill(0);
       maze.exploredExit = false;
@@ -92,7 +115,7 @@ export class Renderer {
 
   resetLevelVisuals(maze) {
     this.maze = maze;
-    this.layout = maze.layoutFor(this.W, this.H, VIEW.MARGIN);
+    this.layout = maze.layoutFor(this.W, this.H, this.playfieldMargin(), this.minCell);
     maze.explored.fill(0);
     maze.exploredExit = false;
     this.buildLayers();
