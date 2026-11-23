@@ -133,18 +133,18 @@ export class Renderer {
       this.H * 0.55,
       this.W * 0.62
     );
-    ambient.addColorStop(0, "rgba(20, 48, 64, 0.22)");
-    ambient.addColorStop(1, "rgba(2, 4, 8, 0)");
+    ambient.addColorStop(0, "rgba(82, 54, 26, 0.24)");
+    ambient.addColorStop(1, "rgba(3, 2, 1, 0)");
     ctx.fillStyle = ambient;
     ctx.fillRect(0, 0, this.W, this.H);
 
-    ctx.fillStyle = "rgba(11, 20, 30, 0.98)";
+    ctx.fillStyle = "rgba(20, 14, 9, 0.98)";
     ctx.fillRect(originX, originY, width, height);
 
     for (let y = 0; y < this.maze.rows; y += 1) {
       for (let x = 0; x < this.maze.cols; x += 1) {
         if ((x + y) % 2 === 0) continue;
-        ctx.fillStyle = "rgba(28, 48, 64, 0.28)";
+        ctx.fillStyle = "rgba(58, 40, 23, 0.3)";
         ctx.fillRect(originX + x * cell, originY + y * cell, cell, cell);
       }
     }
@@ -154,7 +154,7 @@ export class Renderer {
       const px = originX + textureRandom() * width;
       const py = originY + textureRandom() * height;
       const size = textureRandom() * 1.2 + 0.3;
-      ctx.fillStyle = `rgba(120, 185, 210, ${0.025 + textureRandom() * 0.04})`;
+      ctx.fillStyle = `rgba(200, 164, 110, ${0.025 + textureRandom() * 0.04})`;
       ctx.fillRect(px, py, size, size);
     }
 
@@ -164,7 +164,7 @@ export class Renderer {
     ctx.save();
     ctx.shadowColor = UI_COLORS.wallGlow;
     ctx.shadowBlur = Math.max(4, cell * 0.26);
-    ctx.strokeStyle = "rgba(54, 126, 158, 0.56)";
+    ctx.strokeStyle = "rgba(158, 112, 58, 0.52)";
     ctx.lineWidth = Math.max(1.2, cell * 0.065);
     this.traceWalls(ctx);
     ctx.stroke();
@@ -238,10 +238,10 @@ export class Renderer {
     const px = originX + x * cell;
     const py = originY + y * cell;
 
-    ctx.fillStyle = "rgba(44, 106, 130, 0.18)";
+    ctx.fillStyle = "rgba(116, 80, 42, 0.2)";
     ctx.fillRect(px + 0.5, py + 0.5, cell - 1, cell - 1);
 
-    ctx.strokeStyle = "rgba(116, 231, 255, 0.34)";
+    ctx.strokeStyle = "rgba(198, 158, 100, 0.38)";
     ctx.lineWidth = Math.max(1, cell * 0.04);
     ctx.lineCap = "round";
     ctx.beginPath();
@@ -380,7 +380,7 @@ export class Renderer {
   drawBackdrop() {
     const ctx = this.ctx;
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
-    ctx.fillStyle = "#030508";
+    ctx.fillStyle = "#080603";
     ctx.fillRect(0, 0, this.W, this.H);
 
     const redGlow = ctx.createRadialGradient(
@@ -391,15 +391,15 @@ export class Renderer {
       this.H * 0.7,
       this.W * 0.38
     );
-    redGlow.addColorStop(0, "rgba(105, 10, 28, 0.16)");
-    redGlow.addColorStop(1, "rgba(40, 0, 8, 0)");
+    redGlow.addColorStop(0, "rgba(110, 48, 18, 0.18)");
+    redGlow.addColorStop(1, "rgba(34, 14, 4, 0)");
     ctx.fillStyle = redGlow;
     ctx.fillRect(0, 0, this.W, this.H);
 
     const { originX, originY, cell } = this.backdropLayout;
     ctx.save();
     ctx.translate(Math.sin(this.time * 0.08) * 14, Math.cos(this.time * 0.06) * 8);
-    ctx.strokeStyle = "rgba(76, 172, 205, 0.09)";
+    ctx.strokeStyle = "rgba(174, 128, 72, 0.11)";
     ctx.lineWidth = 1.1;
     ctx.lineCap = "round";
     ctx.beginPath();
@@ -436,14 +436,14 @@ export class Renderer {
       this.H * 0.46,
       this.W * 0.42
     );
-    lantern.addColorStop(0, "rgba(70, 190, 220, 0.055)");
-    lantern.addColorStop(1, "rgba(10, 30, 40, 0)");
+    lantern.addColorStop(0, "rgba(198, 149, 80, 0.07)");
+    lantern.addColorStop(1, "rgba(28, 18, 8, 0)");
     ctx.fillStyle = lantern;
     ctx.fillRect(0, 0, this.W, this.H);
 
     for (const mote of this.dust) {
       const blink = 0.5 + 0.5 * Math.sin(this.time * 0.8 + mote.drift);
-      ctx.fillStyle = `rgba(154, 225, 245, ${mote.alpha * blink})`;
+      ctx.fillStyle = `rgba(220, 190, 145, ${mote.alpha * blink})`;
       ctx.beginPath();
       ctx.arc(mote.x, mote.y, mote.size, 0, Math.PI * 2);
       ctx.fill();
@@ -493,7 +493,7 @@ export class Renderer {
     for (const trail of this.trails) {
       const point = this.tilePixel(trail.x, trail.y);
       const alpha = (trail.life / trail.maxLife) * 0.2;
-      ctx.fillStyle = `rgba(94, 224, 255, ${alpha})`;
+      ctx.fillStyle = `rgba(216, 176, 112, ${alpha})`;
       ctx.beginPath();
       ctx.arc(point.x, point.y, cell * 0.18, 0, Math.PI * 2);
       ctx.fill();
@@ -506,7 +506,7 @@ export class Renderer {
     ctx.save();
     for (const mote of this.dust) {
       const blink = 0.5 + 0.5 * Math.sin(this.time * 0.8 + mote.drift);
-      ctx.fillStyle = `rgba(154, 225, 245, ${mote.alpha * blink * 0.7})`;
+      ctx.fillStyle = `rgba(220, 190, 145, ${mote.alpha * blink * 0.7})`;
       ctx.beginPath();
       ctx.arc(mote.x, mote.y, mote.size, 0, Math.PI * 2);
       ctx.fill();
@@ -534,9 +534,9 @@ export class Renderer {
       point.y,
       cell * 2.35 * pulse
     );
-    glow.addColorStop(0, "rgba(127, 235, 255, 0.52)");
-    glow.addColorStop(0.3, "rgba(80, 205, 245, 0.22)");
-    glow.addColorStop(1, "rgba(40, 120, 160, 0)");
+    glow.addColorStop(0, "rgba(224, 184, 118, 0.5)");
+    glow.addColorStop(0.3, "rgba(184, 136, 72, 0.22)");
+    glow.addColorStop(1, "rgba(48, 30, 12, 0)");
     ctx.fillStyle = glow;
     ctx.beginPath();
     ctx.arc(point.x, point.y, cell * 2.35 * pulse, 0, Math.PI * 2);
@@ -549,9 +549,9 @@ export class Renderer {
     const angle = Math.atan2(game.player.facing.y, game.player.facing.x);
     ctx.rotate(angle);
 
-    ctx.shadowColor = "rgba(120, 240, 255, 0.9)";
+    ctx.shadowColor = "rgba(224, 184, 118, 0.9)";
     ctx.shadowBlur = cell * 0.45;
-    ctx.fillStyle = "#dffaff";
+    ctx.fillStyle = "#f7e8c8";
     ctx.beginPath();
     ctx.moveTo(cell * 0.22, 0);
     ctx.lineTo(-cell * 0.13, -cell * 0.17);
@@ -561,7 +561,7 @@ export class Renderer {
     ctx.fill();
 
     ctx.shadowBlur = 0;
-    ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
+    ctx.fillStyle = "rgba(255, 246, 226, 0.92)";
     ctx.beginPath();
     ctx.arc(cell * 0.055, 0, cell * 0.055, 0, Math.PI * 2);
     ctx.fill();
@@ -601,10 +601,10 @@ export class Renderer {
     ctx.scale(lunge, lunge);
 
     const aura = ctx.createRadialGradient(0, 0, 0, 0, 0, cell * 0.92);
-    aura.addColorStop(0, "rgba(5, 2, 7, 0.98)");
-    aura.addColorStop(0.48, "rgba(9, 3, 13, 0.86)");
-    aura.addColorStop(0.76, "rgba(42, 5, 20, 0.26)");
-    aura.addColorStop(1, "rgba(70, 5, 25, 0)");
+    aura.addColorStop(0, "rgba(6, 3, 2, 0.98)");
+    aura.addColorStop(0.48, "rgba(12, 6, 4, 0.86)");
+    aura.addColorStop(0.76, "rgba(46, 16, 8, 0.26)");
+    aura.addColorStop(1, "rgba(48, 16, 6, 0)");
     ctx.fillStyle = aura;
     ctx.beginPath();
     ctx.arc(0, 0, cell * 0.92, 0, Math.PI * 2);
@@ -634,7 +634,7 @@ export class Renderer {
       ctx.fill();
     }
 
-    ctx.strokeStyle = "rgba(142, 48, 79, 0.16)";
+    ctx.strokeStyle = "rgba(140, 54, 34, 0.16)";
     ctx.lineWidth = Math.max(1, cell * 0.025);
     ctx.lineCap = "round";
     for (let i = 0; i < 3; i += 1) {
@@ -651,9 +651,9 @@ export class Renderer {
       ctx.stroke();
     }
 
-    ctx.shadowColor = "rgba(255, 35, 65, 0.95)";
+    ctx.shadowColor = "rgba(220, 74, 56, 0.95)";
     ctx.shadowBlur = cell * 0.55;
-    ctx.fillStyle = "#ff334f";
+    ctx.fillStyle = "#d45b4a";
     for (const side of [-1, 1]) {
       ctx.beginPath();
       ctx.ellipse(
@@ -751,7 +751,7 @@ export class Renderer {
     ctx.clearRect(0, 0, this.fogLayer.width, this.fogLayer.height);
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
 
-    ctx.fillStyle = "rgba(1, 3, 7, 0.965)";
+    ctx.fillStyle = "rgba(4, 3, 2, 0.965)";
     ctx.fillRect(0, 0, this.W, this.H);
 
     const point = this.tilePixel(game.player.pos.x, game.player.pos.y);
@@ -788,8 +788,8 @@ export class Renderer {
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
     const wash = ctx.createRadialGradient(point.x, point.y, 0, point.x, point.y, radius);
-    wash.addColorStop(0, "rgba(121, 225, 250, 0.09)");
-    wash.addColorStop(1, "rgba(40, 120, 160, 0)");
+    wash.addColorStop(0, "rgba(198, 149, 80, 0.1)");
+    wash.addColorStop(1, "rgba(48, 30, 12, 0)");
     ctx.fillStyle = wash;
     ctx.beginPath();
     ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
@@ -835,7 +835,7 @@ export class Renderer {
   drawStateTint(game) {
     if (game.state === "dying") {
       const strength = clamp(game.deathTimer / 0.9, 0, 1);
-      this.ctx.fillStyle = `rgba(130, 0, 18, ${0.08 + strength * 0.18})`;
+      this.ctx.fillStyle = `rgba(122, 38, 18, ${0.08 + strength * 0.18})`;
       this.ctx.fillRect(0, 0, this.W, this.H);
     } else if (game.state === "escaped") {
       this.ctx.fillStyle = "rgba(55, 255, 170, 0.045)";

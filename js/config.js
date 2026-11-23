@@ -89,12 +89,12 @@ export const SETTINGS_DEFAULTS = {
 };
 
 export const UI_COLORS = {
-  background: "#030508",
-  wall: "rgba(70, 124, 150, 0.94)",
-  wallGlow: "rgba(70, 195, 235, 0.42)",
-  player: "#e8fbff",
-  playerGlow: "rgba(104, 226, 255, 0.42)",
+  background: "#080603",
+  wall: "rgba(168, 128, 74, 0.9)",
+  wallGlow: "rgba(194, 150, 82, 0.34)",
+  player: "#f2dfb8",
+  playerGlow: "rgba(216, 178, 119, 0.42)",
   exit: "#69ffb4",
   exitGlow: "rgba(72, 255, 164, 0.5)",
-  shadow: "#ff3454"
+  shadow: "#d45b4a"
 };

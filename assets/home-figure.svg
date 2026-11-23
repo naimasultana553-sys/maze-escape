@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 900" fill="none">
+  <defs>
+    <linearGradient id="rim" x1="205" y1="180" x2="410" y2="760" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#d8b679" stop-opacity=".72" />
+      <stop offset=".35" stop-color="#9c7843" stop-opacity=".38" />
+      <stop offset="1" stop-color="#2a1c12" stop-opacity=".08" />
+    </linearGradient>
+    <linearGradient id="cloak" x1="210" y1="250" x2="410" y2="850" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1a130e" />
+      <stop offset=".45" stop-color="#0c0907" />
+      <stop offset="1" stop-color="#030303" />
+    </linearGradient>
+    <radialGradient id="void" cx="0" cy="0" r="1" gradientTransform="translate(300 275) rotate(90) scale(105 74)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#000" />
+      <stop offset=".7" stop-color="#050403" />
+      <stop offset="1" stop-color="#120c08" />
+    </radialGradient>
+    <radialGradient id="haze" cx="0" cy="0" r="1" gradientTransform="translate(300 520) rotate(90) scale(390 300)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#b18a54" stop-opacity=".1" />
+      <stop offset="1" stop-color="#b18a54" stop-opacity="0" />
+    </radialGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="18" />
+    </filter>
+    <filter id="eyeGlow" x="-300%" y="-300%" width="700%" height="700%">
+      <feGaussianBlur stdDeviation="5" result="b" />
+      <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+    </filter>
+  </defs>
+
+  <ellipse cx="300" cy="520" rx="300" ry="390" fill="url(#haze)" />
+
+  <g stroke="#9a7647" stroke-width="2" opacity=".13">
+    <path d="M54 118h136V36M546 118H410V36M54 790h136v82M546 790H410v82" />
+    <path d="M110 176h104v104H110zM386 176h104v104H386zM110 620h104v104H110zM386 620h104v104H386z" />
+    <path d="M300 68v58M300 774v58M64 450h64M472 450h64" />
+  </g>
+
+  <g opacity=".2" filter="url(#soft)" fill="#ad8150">
+    <ellipse cx="180" cy="470" rx="150" ry="38" />
+    <ellipse cx="430" cy="580" rx="170" ry="44" />
+    <ellipse cx="285" cy="760" rx="220" ry="48" />
+  </g>
+
+  <path d="M300 96c-58 0-96 43-96 101 0 24 6 43 16 60-24 24-39 61-42 111l-18 318c-3 51 10 86 34 116-12 28-16 52-12 78h236c4-26 0-50-12-78 24-30 37-65 34-116l-18-318c-3-50-18-87-42-111 10-17 16-36 16-60 0-58-38-101-96-101Z" fill="url(#cloak)" stroke="url(#rim)" stroke-width="2.5" />
+
+  <path d="M205 342c22 20 53 31 95 31s73-11 95-31M199 530c35 17 66 25 101 25s66-8 101-25M192 724c38 14 73 21 108 21s70-7 108-21" stroke="#b18b56" stroke-opacity=".16" stroke-width="2" />
+
+  <path d="M300 158c-38 0-61 28-61 68 0 26 10 49 25 65-7 18-10 37-10 57 0 44 20 78 46 78s46-34 46-78c0-20-3-39-10-57 15-16 25-39 25-65 0-40-23-68-61-68Z" fill="#0a0807" stroke="url(#rim)" stroke-width="2" />
+  <ellipse cx="300" cy="281" rx="58" ry="72" fill="url(#void)" />
+  <path d="M271 272c9-7 19-10 29-9M300 263c10-1 20 2 29 9" stroke="#d7ad6b" stroke-width="3" stroke-linecap="round" filter="url(#eyeGlow)" opacity=".85" />
+
+  <path d="M222 448c-13 30-18 67-14 111 3 34 12 63 27 87M378 448c13 30 18 67 14 111-3 34-12 63-27 87" stroke="#c49a60" stroke-opacity=".2" stroke-width="3" stroke-linecap="round" />
+
+  <path d="M252 570c-12 18-12 40-4 59 5 12 14 19 24 18M348 570c12 18 12 40 4 59-5 12-14 19-24 18" stroke="#aa844f" stroke-opacity=".15" stroke-width="8" stroke-linecap="round" />
+
+  <ellipse cx="300" cy="858" rx="168" ry="24" fill="#000" opacity=".62" filter="url(#soft)" />
+</svg>
