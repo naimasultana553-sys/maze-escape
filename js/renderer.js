@@ -1,6 +1,6 @@
 import { Maze } from "./maze.js";
 import { DIFFICULTIES, LEVELS, UI_COLORS, VIEW } from "./config.js";
-import { clamp, mulberry32 } from "./utils.js";
+import { clamp, flickerFactor, mulberry32 } from "./utils.js";
 
 const GAME_STATES_WITH_SCENE = new Set([
   "playing",
@@ -34,6 +34,8 @@ export class Renderer {
     this.screenShakeEnabled = true;
     this.lastTrailTime = 0;
     this.dangerTone = 0;
+    this.flicker = null;
+    this.currentFlicker = 1;
     this.controlInset = 0;
     this.minCell = 8;
 
@@ -92,6 +94,31 @@ export class Renderer {
       ...VIEW.MARGIN,
       bottom: VIEW.MARGIN.bottom + this.controlInset
     };
+  }
+
+  setFlicker({ interval, depth, duration, seed = 0, softened = false } = {}) {
+    if (!interval || !duration) {
+      this.clearFlicker();
+      return;
+    }
+    this.flicker = {
+      interval,
+      depth,
+      duration,
+      offset: ((seed % 1000) / 1000) * interval,
+      softened: Boolean(softened)
+    };
+    this.currentFlicker = 1;
+  }
+
+  setFlickerSoftened(softened) {
+    if (!this.flicker) return;
+    this.flicker.softened = Boolean(softened);
+  }
+
+  clearFlicker() {
+    this.flicker = null;
+    this.currentFlicker = 1;
   }
 
   setDangerTone(levelIndex, difficultyIndex) {
@@ -369,6 +396,11 @@ export class Renderer {
 
   updateEffects(dt, game) {
     this.time += dt;
+
+    const sceneVisible = game.maze && game.player && GAME_STATES_WITH_SCENE.has(game.state);
+    this.currentFlicker = sceneVisible
+      ? flickerFactor(game.elapsed || 0, this.flicker)
+      : 1;
 
     if (this.shake.timer > 0) this.shake.timer = Math.max(0, this.shake.timer - dt);
 
@@ -651,24 +683,32 @@ export class Renderer {
   }
 
   drawShadow(game) {
-    const shadow = game.shadow;
-    if (!shadow || !shadow.active) return;
+    const shadows = game.shadows || (game.shadow ? [game.shadow] : []);
+    shadows.forEach((shadow, drawIndex) => {
+      if (shadow && shadow.active) this.drawOneShadow(game, shadow, drawIndex);
+    });
+  }
+
+  drawOneShadow(game, shadow, drawIndex) {
     const ctx = this.ctx;
     const { cell } = this.layout;
+    const index = shadow.index ?? drawIndex;
+    const alternate = index % 2 === 1;
     const point = this.tilePixel(shadow.pos.x, shadow.pos.y);
     const dying = game.state === "dying";
     const lunge = dying ? 1 + (1 - clamp(game.deathTimer / 0.9, 0, 1)) * 0.8 : 1;
-    const pulse = 1 + Math.sin(this.time * 3.1) * 0.06;
+    const size = index === 0 ? 1 : 0.94;
+    const pulse = 1 + Math.sin(this.time * 3.1 + index * 0.7) * 0.06;
 
     ctx.save();
     ctx.translate(point.x, point.y);
-    ctx.scale(lunge, lunge);
+    ctx.scale(lunge * size, lunge * size);
 
     const aura = ctx.createRadialGradient(0, 0, 0, 0, 0, cell * 0.92);
     aura.addColorStop(0, "rgba(6, 3, 2, 0.98)");
     aura.addColorStop(0.48, "rgba(12, 6, 4, 0.86)");
-    aura.addColorStop(0.76, "rgba(46, 16, 8, 0.26)");
-    aura.addColorStop(1, "rgba(48, 16, 6, 0)");
+    aura.addColorStop(0.76, alternate ? "rgba(58, 30, 8, 0.28)" : "rgba(46, 16, 8, 0.26)");
+    aura.addColorStop(1, alternate ? "rgba(52, 28, 6, 0)" : "rgba(48, 16, 6, 0)");
     ctx.fillStyle = aura;
     ctx.beginPath();
     ctx.arc(0, 0, cell * 0.92, 0, Math.PI * 2);
@@ -684,7 +724,7 @@ export class Renderer {
     ctx.fill();
 
     for (let i = 0; i < 6; i += 1) {
-      const angle = this.time * 0.65 + i * 1.12;
+      const angle = this.time * 0.65 + i * 1.12 + index * 0.31;
       const orbit = cell * (0.16 + 0.06 * Math.sin(this.time * 1.7 + i));
       const sx = Math.cos(angle) * orbit;
       const sy = Math.sin(angle) * orbit * 0.9 - cell * 0.06;
@@ -715,9 +755,9 @@ export class Renderer {
       ctx.stroke();
     }
 
-    ctx.shadowColor = "rgba(220, 74, 56, 0.95)";
+    ctx.shadowColor = alternate ? "rgba(224, 138, 54, 0.95)" : "rgba(220, 74, 56, 0.95)";
     ctx.shadowBlur = cell * 0.55;
-    ctx.fillStyle = "#d45b4a";
+    ctx.fillStyle = alternate ? "#d88f42" : "#d45b4a";
     for (const side of [-1, 1]) {
       ctx.beginPath();
       ctx.ellipse(
@@ -816,12 +856,17 @@ export class Renderer {
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
 
     const danger = this.dangerTone;
-    ctx.fillStyle = `rgba(4, 3, 2, ${(0.965 + danger * 0.018).toFixed(3)})`;
+    const fogAlpha = clamp(
+      0.965 + danger * 0.018 + (1 - this.currentFlicker) * 0.025,
+      0,
+      0.998
+    );
+    ctx.fillStyle = `rgba(4, 3, 2, ${fogAlpha.toFixed(3)})`;
     ctx.fillRect(0, 0, this.W, this.H);
 
     const point = this.tilePixel(game.player.pos.x, game.player.pos.y);
-    const flicker = 1 + Math.sin(this.time * 8.7) * 0.018 + Math.sin(this.time * 2.3) * 0.012;
-    const radius = game.lightRadius * this.layout.cell * flicker;
+    const breathing = 1 + Math.sin(this.time * 8.7) * 0.018 + Math.sin(this.time * 2.3) * 0.012;
+    const radius = game.lightRadius * this.layout.cell * breathing * Math.max(0.18, this.currentFlicker);
 
     ctx.globalCompositeOperation = "destination-out";
     const light = ctx.createRadialGradient(
@@ -850,7 +895,8 @@ export class Renderer {
     const ctx = this.ctx;
     const danger = this.dangerTone;
     const point = this.tilePixel(game.player.pos.x, game.player.pos.y);
-    const radius = game.lightRadius * this.layout.cell * (1.1 - danger * 0.08);
+    const flicker = Math.max(0.12, this.currentFlicker);
+    const radius = game.lightRadius * this.layout.cell * (1.1 - danger * 0.08) * flicker;
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
     const wash = ctx.createRadialGradient(point.x, point.y, 0, point.x, point.y, radius);
@@ -858,7 +904,7 @@ export class Renderer {
       0,
       `rgba(${Math.round(198 + danger * 30)}, ${Math.round(
         149 - danger * 55
-      )}, ${Math.round(80 - danger * 35)}, ${(0.1 - danger * 0.03).toFixed(3)})`
+      )}, ${Math.round(80 - danger * 35)}, ${((0.1 - danger * 0.03) * flicker).toFixed(3)})`
     );
     wash.addColorStop(1, "rgba(48, 30, 12, 0)");
     ctx.fillStyle = wash;

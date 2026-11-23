@@ -76,3 +76,18 @@ export function smoothStep(edge0, edge1, value) {
   const x = clamp((value - edge0) / (edge1 - edge0), 0, 1);
   return x * x * (3 - 2 * x);
 }
+
+export function flickerFactor(elapsed, config) {
+  if (!config || !config.interval || !config.duration) return 1;
+  const interval = Math.max(0.1, config.interval);
+  const duration = Math.min(Math.max(0.01, config.duration), interval * 0.3);
+  const offset = config.offset || 0;
+  const rawDepth = clamp(config.depth ?? 1, 0.05, 1);
+  const depth = config.softened ? 1 - (1 - rawDepth) * 0.35 : rawDepth;
+  const phase = ((elapsed + offset) % interval + interval) % interval;
+  if (phase >= duration) return 1;
+
+  const fade = Math.max(0.001, Math.min(duration * 0.22, duration / 2));
+  const strength = clamp(Math.min(phase, duration - phase) / fade, 0, 1);
+  return 1 - (1 - depth) * strength;
+}

@@ -50,6 +50,7 @@ export class Game {
     this.levelIndex = 0;
     this.maze = null;
     this.player = null;
+    this.shadows = [];
     this.shadow = null;
     this.lightRadius = 4.5;
     this.elapsed = 0;
@@ -100,6 +101,7 @@ export class Game {
     this.ui.setDanger(0);
     this.ui.setLevelDanger(0, 0);
     this.renderer.setDangerTone(0, 0);
+    this.renderer.clearFlicker();
     this.ui.hideCountdown();
   }
 
@@ -159,10 +161,32 @@ export class Game {
     this.renderer.setMaze(this.maze, true);
 
     this.player = new Player(this.maze, this.maze.start);
-    this.shadow = new Shadow(this.maze, this.maze.shadowStart, {
-      baseSpeed: difficulty.shadowSpeed[this.levelIndex],
-      maxSpeed: difficulty.shadowMax[this.levelIndex],
-      wakeDelay: difficulty.wakeDelay[this.levelIndex]
+
+    const shadowCount = difficulty.shadowCount[this.levelIndex];
+    const baseSpeed = difficulty.shadowSpeed[this.levelIndex];
+    const maxSpeed = difficulty.shadowMax[this.levelIndex];
+    const baseWake = difficulty.wakeDelay[this.levelIndex];
+    const extraGap = difficulty.extraWakeGap[this.levelIndex];
+    const speedScale = difficulty.extraSpeedScale[this.levelIndex];
+    const starts = this.maze.shadowStarts.slice(0, shadowCount);
+
+    this.shadows = starts.map((start, index) => {
+      const scale = index === 0 ? 1 : speedScale;
+      return new Shadow(this.maze, start, {
+        index,
+        baseSpeed: baseSpeed * scale,
+        maxSpeed: maxSpeed * scale,
+        wakeDelay: baseWake + index * extraGap
+      });
+    });
+    this.shadow = this.shadows[0] || null;
+
+    this.renderer.setFlicker({
+      interval: difficulty.flicker.interval[this.levelIndex],
+      depth: difficulty.flicker.depth[this.levelIndex],
+      duration: difficulty.flicker.duration[this.levelIndex],
+      seed,
+      softened: this.settings.reducedFlash
     });
 
     this.elapsed = 0;
@@ -199,7 +223,10 @@ export class Game {
     });
     this.ui.setThreat(0);
     this.ui.setDanger(0);
-    this.ui.showCountdown("3", "THE SHADOW IS WAKING");
+    this.ui.showCountdown(
+      "3",
+      this.shadows.length > 1 ? "THE HUNTERS ARE WAKING" : "THE SHADOW IS WAKING"
+    );
 
     this.audio.unlock();
     this.audio.startAmbient();
@@ -264,6 +291,7 @@ export class Game {
     this.settings = this.storage.updateSettings(partial);
     this.audio.updateSettings(this.settings);
     this.renderer.screenShakeEnabled = this.settings.screenShake;
+    this.renderer.setFlickerSoftened(this.settings.reducedFlash);
     this.ui.setSettings(this.settings);
   }
 
@@ -306,7 +334,9 @@ export class Game {
     if (label !== this.lastCountdownLabel) {
       this.lastCountdownLabel = label;
       const running = label === "RUN";
-      this.ui.showCountdown(label, running ? "RUN" : "THE SHADOW IS WAKING");
+      const waking =
+        this.shadows.length > 1 ? "THE HUNTERS ARE WAKING" : "THE SHADOW IS WAKING";
+      this.ui.showCountdown(label, running ? "RUN" : waking);
       this.audio.countdownBeep(running);
     }
 
@@ -342,14 +372,22 @@ export class Game {
       this.renderer.explore(this.player.cell, this.lightRadius);
     }
 
-    const shadowEvent = this.shadow.update(dt, this.player, this.elapsed);
-    if (shadowEvent === "woke") {
+    let wokeCount = 0;
+    for (const shadow of this.shadows) {
+      if (shadow.update(dt, this.player, this.elapsed) === "woke") wokeCount += 1;
+    }
+    if (wokeCount > 0) {
+      const activeCount = this.shadows.filter((shadow) => shadow.active).length;
+      const message =
+        activeCount === 1
+          ? "THE SHADOW HAS AWAKENED"
+          : `MORE HUNTERS WAKE · ${activeCount}/${this.shadows.length}`;
       this.audio.wake();
-      this.ui.showToast("THE SHADOW HAS AWAKENED", 2600);
-      this.renderer.addShake(3, 0.5);
+      this.ui.showToast(message, 2600);
+      this.renderer.addShake(3 + Math.min(activeCount, 6) * 0.45, 0.5);
     }
 
-    if (this.shadow.active && this.isCaught()) {
+    if (this.isCaught()) {
       this.catchPlayer();
       return;
     }
@@ -369,19 +407,28 @@ export class Game {
   updateThreat(dt) {
     let threat = 0;
     let level = 0;
+    const activeShadows = this.shadows.filter((shadow) => shadow.active);
+    const surrounded = activeShadows.length >= 3;
 
-    if (this.shadow.active) {
-      const distance = this.shadow.pathLength;
-      if (!Number.isFinite(distance)) {
+    if (activeShadows.length > 0) {
+      const nearest = activeShadows.reduce(
+        (closest, shadow) => Math.min(closest, shadow.pathLength),
+        Infinity
+      );
+      if (!Number.isFinite(nearest)) {
         level = 1;
         threat = 0.1;
       } else {
-        if (distance <= 2) level = 4;
-        else if (distance <= 4) level = 3;
-        else if (distance <= 8) level = 2;
+        if (nearest <= 2) level = 4;
+        else if (nearest <= 4) level = 3;
+        else if (nearest <= 8) level = 2;
         else level = 1;
-        threat = clamp(1 - Math.max(0, distance - 1) / 14, 0, 1);
+        threat = clamp(1 - Math.max(0, nearest - 1) / 14, 0, 1);
       }
+
+      threat = clamp(threat + Math.min(0.2, (activeShadows.length - 1) * 0.035), 0, 1);
+      if (surrounded && nearest <= 8) level = Math.min(4, level + 1);
+      else if (activeShadows.length >= 5) level = Math.max(level, 3);
     }
 
     const danger =
@@ -389,13 +436,13 @@ export class Game {
 
     this.ui.setDanger(danger);
     this.audio.setThreat(threat);
-    this.audio.updateHeartbeat(dt, threat, this.shadow.active);
+    this.audio.updateHeartbeat(dt, threat, activeShadows.length > 0);
 
     this.threatAccumulator += dt;
     if (this.threatAccumulator >= 0.16 || level !== this.lastThreatLevel) {
       this.threatAccumulator = 0;
       this.lastThreatLevel = level;
-      this.ui.setThreat(level);
+      this.ui.setThreat(level, surrounded ? "SURROUNDED" : undefined);
     }
   }
 
@@ -407,16 +454,19 @@ export class Game {
   }
 
   isCaught() {
-    if (!this.shadow?.active) return false;
+    return this.shadows.some((shadow) => shadow.active && this.isCaughtBy(shadow));
+  }
+
+  isCaughtBy(shadow) {
     const distance = Math.hypot(
-      this.player.pos.x - this.shadow.pos.x,
-      this.player.pos.y - this.shadow.pos.y
+      this.player.pos.x - shadow.pos.x,
+      this.player.pos.y - shadow.pos.y
     );
     if (distance >= CATCH_RADIUS) return false;
-    if (this.maze.areConnected(this.player.cell, this.shadow.cell)) return true;
+    if (this.maze.areConnected(this.player.cell, shadow.cell)) return true;
     if (
       this.player.target &&
-      this.maze.areConnected(this.player.target, this.shadow.cell) &&
+      this.maze.areConnected(this.player.target, shadow.cell) &&
       distance < CATCH_RADIUS
     ) {
       return true;

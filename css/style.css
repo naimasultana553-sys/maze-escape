@@ -243,7 +243,8 @@ body.reduced-flash {
   --flash-max: 0.24;
 }
 
-body.reduced-flash .hud-threat.threat-4 {
+body.reduced-flash .hud-threat.threat-4,
+body.reduced-flash .hud-threat.surrounded #threat-label {
   animation: none;
 }
 
@@ -477,6 +478,16 @@ body.reduced-flash .hud-threat.threat-4 {
 
 .hud-threat.threat-4 {
   animation: threatText 0.55s infinite alternate;
+}
+
+.hud-threat.surrounded {
+  border-color: rgba(255, 62, 88, 0.68);
+  box-shadow: 0 0 2.4em rgba(255, 40, 70, 0.2), inset 0 0 1.2em rgba(255, 40, 70, 0.08);
+}
+
+.hud-threat.surrounded #threat-label {
+  color: #ff8095;
+  animation: threatText 0.45s infinite alternate;
 }
 
 @keyframes threatPulse {
@@ -2301,7 +2312,8 @@ h2 {
     font-size: 0.46em;
   }
 
-  .difficulty-stats span:nth-child(3) {
+  .difficulty-stats span:nth-child(3),
+  .difficulty-stats span:nth-child(4) {
     display: none;
   }
 
@@ -2640,7 +2652,8 @@ h2 {
     font-size: 0.52em;
   }
 
-  .difficulty-stats span:nth-child(3) {
+  .difficulty-stats span:nth-child(3),
+  .difficulty-stats span:nth-child(4) {
     display: flex;
   }
 

@@ -24,7 +24,8 @@ export class Maze {
     this.start = this.pickStart(random);
     const distances = this.bfs(this.start.x, this.start.y);
     this.exit = this.pickExit(distances);
-    this.shadowStart = this.pickShadowStart(distances);
+    this.shadowStarts = this.pickShadowStarts(distances, 8);
+    this.shadowStart = this.shadowStarts[0];
   }
 
   index(x, y) {
@@ -125,21 +126,129 @@ export class Maze {
     return best;
   }
 
-  pickShadowStart(distances) {
-    let best = null;
-    let bestDistance = -1;
-    for (let y = 0; y < this.rows; y += 1) {
-      for (let x = 0; x < this.cols; x += 1) {
-        if (x === this.exit.x && y === this.exit.y) continue;
-        if (x === this.start.x && y === this.start.y) continue;
-        const distance = distances.dist[this.index(x, y)];
-        if (distance > bestDistance) {
-          bestDistance = distance;
-          best = { x, y };
-        }
+  pickShadowStarts(distances, count) {
+    const lastX = this.cols - 1;
+    const lastY = this.rows - 1;
+    const midX = Math.floor(lastX / 2);
+    const midY = Math.floor(lastY / 2);
+    const unique = (values, max) =>
+      [...new Set(values)].filter((value) => value >= 0 && value <= max);
+    const span = (center, radius, max) =>
+      unique(
+        Array.from({ length: radius * 2 + 1 }, (_, index) => center - radius + index),
+        max
+      );
+
+    const slots = [
+      {
+        side: "NW",
+        cells: [
+          ...unique([0, 1, 2, 3], lastX).map((x) => ({ x, y: 0 })),
+          ...unique([0, 1, 2, 3], lastY).map((y) => ({ x: 0, y }))
+        ]
+      },
+      {
+        side: "N",
+        cells: span(midX, Math.max(2, Math.floor(this.cols / 5)), lastX).map((x) => ({
+          x,
+          y: 0
+        }))
+      },
+      {
+        side: "NE",
+        cells: [
+          ...unique([lastX - 3, lastX - 2, lastX - 1, lastX], lastX).map((x) => ({ x, y: 0 })),
+          ...unique([0, 1, 2, 3], lastY).map((y) => ({ x: lastX, y }))
+        ]
+      },
+      {
+        side: "E",
+        cells: span(midY, Math.max(2, Math.floor(this.rows / 5)), lastY).map((y) => ({
+          x: lastX,
+          y
+        }))
+      },
+      {
+        side: "SE",
+        cells: [
+          ...unique([lastY - 3, lastY - 2, lastY - 1, lastY], lastY).map((y) => ({
+            x: lastX,
+            y
+          })),
+          ...unique([lastX - 3, lastX - 2, lastX - 1, lastX], lastX).map((x) => ({
+            x,
+            y: lastY
+          }))
+        ]
+      },
+      {
+        side: "S",
+        cells: span(midX, Math.max(2, Math.floor(this.cols / 5)), lastX).map((x) => ({
+          x,
+          y: lastY
+        }))
+      },
+      {
+        side: "SW",
+        cells: [
+          ...unique([0, 1, 2, 3], lastX).map((x) => ({ x, y: lastY })),
+          ...unique([lastY - 3, lastY - 2, lastY - 1, lastY], lastY).map((y) => ({
+            x: 0,
+            y
+          }))
+        ]
+      },
+      {
+        side: "W",
+        cells: span(midY, Math.max(2, Math.floor(this.rows / 5)), lastY).map((y) => ({
+          x: 0,
+          y
+        }))
       }
-    }
-    return best || { ...this.start };
+    ];
+
+    const blocked = new Set([
+      this.index(this.start.x, this.start.y),
+      this.index(this.exit.x, this.exit.y)
+    ]);
+    const candidates = slots
+      .map((slot) => {
+        const best = slot.cells
+          .map((cell) => ({
+            ...cell,
+            distance: distances.dist[this.index(cell.x, cell.y)]
+          }))
+          .filter((cell) => !blocked.has(this.index(cell.x, cell.y)))
+          .filter((cell) => Number.isFinite(cell.distance) && cell.distance >= 0)
+          .sort((a, b) => b.distance - a.distance || a.y - b.y || a.x - b.x)[0];
+        return best ? { ...best, side: slot.side } : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.distance - a.distance || a.side.localeCompare(b.side));
+
+    const chosen = [];
+    const addCandidates = (minGap, enforceSides) => {
+      for (const cell of candidates) {
+        if (chosen.length >= count) return;
+        if (enforceSides && chosen.some((other) => other.side === cell.side)) continue;
+        if (chosen.some((other) => other.x === cell.x && other.y === cell.y)) continue;
+        const tooClose = chosen.some(
+          (other) => Math.abs(other.x - cell.x) + Math.abs(other.y - cell.y) < minGap
+        );
+        if (tooClose) continue;
+        chosen.push({ x: cell.x, y: cell.y, side: cell.side });
+      }
+    };
+
+    const preferredGap = Math.max(2, Math.floor(Math.min(this.cols, this.rows) / 3));
+    addCandidates(preferredGap, true);
+    if (chosen.length < count) addCandidates(2, true);
+    if (chosen.length < count) addCandidates(1, false);
+    return chosen.slice(0, count);
+  }
+
+  pickShadowStart(distances) {
+    return this.pickShadowStarts(distances, 1)[0] || { ...this.start };
   }
 
   getNeighbors(x, y) {

@@ -279,8 +279,11 @@ export class UI {
     document.getElementById("intro-kicker").textContent = `${level.label} · ${difficulty.name.toUpperCase()}`;
     document.getElementById("intro-title").textContent = level.title;
     document.getElementById("intro-story").textContent = level.story;
+    const count = difficulty.shadowCount[levelIndex];
+    const hunterText =
+      count === 1 ? "1 HUNTER" : `${count} HUNTERS FROM DIFFERENT SIDES`;
     document.getElementById("intro-meta").textContent =
-      `${cols} × ${rows} MAZE  ·  THE SHADOW WAKES IN ${difficulty.wakeDelay[levelIndex]} SECONDS`;
+      `${cols} × ${rows} MAZE  ·  ${hunterText}  ·  FIRST WAKES IN ${difficulty.wakeDelay[levelIndex]} SECONDS`;
     this.setLevelDanger(levelIndex, difficultyIndex);
     this.showScreen("intro");
     this.hideCountdown();
@@ -381,10 +384,12 @@ export class UI {
     if (timer !== undefined) this.hudTimer.textContent = timer;
   }
 
-  setThreat(level) {
+  setThreat(level, labelOverride) {
     const safe = Math.max(0, Math.min(4, level));
     for (let i = 0; i < 5; i += 1) this.hudThreat.classList.toggle(`threat-${i}`, i === safe);
-    this.threatLabel.textContent = THREAT_LABELS[safe];
+    const surrounded = labelOverride === "SURROUNDED";
+    this.hudThreat.classList.toggle("surrounded", surrounded);
+    this.threatLabel.textContent = labelOverride || THREAT_LABELS[safe];
   }
 
   setDanger(amount) {

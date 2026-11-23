@@ -46,10 +46,13 @@ with `file://` will not work.
 
 - Three difficulties, each with six unique levels (18 levels total)
 - A winding level path: clear a level to unlock the next step toward the treasure
-- Different difficulty curves: Easy favors larger mazes and generous light, Medium wakes the Shadow earlier, Hard collapses light fast and never slows
-- Visual-only danger escalation: higher levels bring darker walls, denser fog, and stronger red/amber intensity
+- Every difficulty ramps from 1 hunter at Level 1 to 6 hunters at Level 6
+- Hunters spawn on different perimeter sides/corners, chosen deterministically from the level seed
+- Difficulty controls the rush: Easy has long wake gaps and slower extra hunters, Hard stacks fast hunters almost immediately
+- Light flickers for fractions of a second, worsening each level; `Reduce flashing` softens the dips
+- Threat HUD tracks the nearest hunter and switches to `SURROUNDED` when three or more are active
 - Fixed seeded layouts so best times are fair
-- Relentless Shadow that follows a BFS shortest path and accelerates over time
+- Hunters follow BFS shortest paths and accelerate over time
 - Fog of war with a persistent memory map
 - Synthesized horror audio: footsteps, heartbeat, ambient drone, jumpscare, victory chord
 - Level unlocking, best times, and settings saved to `localStorage`
@@ -84,12 +87,15 @@ npm test
 ```
 
 The tests verify that every generated maze is solvable, the exit is placed at a farthest
-reachable cell, the outer boundary is sealed, the Shadow has a valid path to the player,
-all 18 seeds are unique, and every difficulty has six unique progressive tuning values.
+reachable cell, the outer boundary is sealed, hunters have valid paths to the player,
+all 18 seeds are unique, every difficulty ramps from 1 to 6 hunters, spawns stay on distinct
+perimeter sides, extra hunters wake in staggered order, and flicker grows worse each level.
 
 ## Tuning
 
-Level titles and stories live in `LEVELS` in `js/config.js`. Difficulty size, Shadow speed,
-wake delay, and light radius arrays are index-aligned with those six levels. Maze seeds are
-derived from the difficulty's `seedBase` plus the level number, so changing a `seedBase`
-changes that difficulty's layouts.
+Level titles and stories live in `LEVELS` in `js/config.js`. Difficulty size, hunter count,
+hunter speed, wake delay, extra wake gap, extra hunter speed scale, light radius, and the
+`flicker.interval` / `flicker.depth` / `flicker.duration` arrays are all index-aligned with
+those six levels. Lower `flicker.depth` means a deeper dip in light. Maze seeds are derived
+from the difficulty's `seedBase` plus the level number, so changing a `seedBase` changes that
+difficulty's layouts and deterministic hunter spawns.

@@ -5,6 +5,7 @@ export class Shadow {
   constructor(maze, startCell, config) {
     this.maze = maze;
     this.config = config;
+    this.index = config.index || 0;
     this.startCell = { ...startCell };
     this.reset();
   }
