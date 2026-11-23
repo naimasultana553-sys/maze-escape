@@ -10,6 +10,15 @@ Shadow catches you.
 
 [mazeescape-yn6k.vercel.app](https://mazeescape-yn6k.vercel.app)
 
+## Install on your phone
+
+Open the live URL in your mobile browser, then:
+
+- **Android / Chrome:** menu `⋮` → **Install app** or **Add to Home screen**
+- **iPhone / Safari:** **Share** → **Add to Home Screen**
+
+The app box will use the neon maze-eye logo. The game also opens standalone without the browser address bar.
+
 ## Run the game
 
 Requires Node.js 18 or newer.
